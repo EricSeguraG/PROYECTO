@@ -34,7 +34,7 @@ try:
     print("CSV cargado exitosamente")
     print(f"Dimensiones del DataFrame: {df.shape}")
 except Exception as e:
-    print(f"Error crítico al cargar el CSV: {e}")
+    print(f"Error critico al cargar el CSV: {e}")
     exit(1)
 
 # Crear columna combinada de main_accords de forma más robusta
