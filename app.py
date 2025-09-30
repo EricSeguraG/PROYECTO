@@ -1,7 +1,8 @@
 import pandas as pd
 from flask import Flask, jsonify, request, abort
 import os
-
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Función mejorada para cargar el CSV con validación de archivo
 def cargar_csv():
@@ -9,7 +10,6 @@ def cargar_csv():
     if not os.path.exists(archivo):
         raise FileNotFoundError(f"El archivo {archivo} no se encuentra en el directorio actual")
 
-    # Lista de posibles configuraciones para cargar el CSV
     configuraciones = [
         {"sep": ";", "encoding": "latin1"},
         {"sep": ",", "encoding": "latin1", "quotechar": '"'},
@@ -37,7 +37,7 @@ except Exception as e:
     print(f"Error critico al cargar el CSV: {e}")
     exit(1)
 
-# Crear columna combinada de main_accords de forma más robusta
+# Crear columna combinada de main_accords
 main_cols = [c for c in df.columns if c.lower().startswith("mainaccord")]
 if main_cols:
     df['main_accords'] = df[main_cols].apply(
@@ -47,13 +47,11 @@ if main_cols:
 else:
     df['main_accords'] = [[] for _ in range(len(df))]
 
-# Campos a exponer en la API (usando los nombres exactos de las columnas)
+# Campos a exponer en la API
 CAMPOS_VALIDOS = [
     'url', 'perfume', 'marca', 'genero', 'año', 'salida',
     'corazon', 'base', 'perfumista', 'perfumista 2', 'main_accords'
 ]
-
-# Solo incluir columnas que realmente existen en el DataFrame
 CAMPOS_DISPONIBLES = [campo for campo in CAMPOS_VALIDOS if campo in df.columns]
 
 print("Columnas disponibles en la API:", CAMPOS_DISPONIBLES)
@@ -61,17 +59,38 @@ print("Columnas disponibles en la API:", CAMPOS_DISPONIBLES)
 # Crear la aplicación Flask
 app = Flask(__name__)
 
+# ------------------------
+# Funciones auxiliares
+# ------------------------
+def filtrar_campos(df_sub):
+    return df_sub[CAMPOS_DISPONIBLES]
 
-# Función auxiliar para filtrar columnas
-def filtrar_campos(df):
-    return df[CAMPOS_DISPONIBLES]
+def extraer_notas(row):
+    notas = []
+    for campo in ['salida', 'corazon', 'base']:
+        if campo in df.columns and pd.notna(row.get(campo, None)):
+            notas += [n.strip().lower() for n in str(row[campo]).split(',')]
+    if 'main_accords' in row and isinstance(row['main_accords'], list):
+        notas += [str(n).lower() for n in row['main_accords']]
+    return list(set(notas))
 
+df['todas_notas'] = df.apply(extraer_notas, axis=1)
 
-# Endpoint: listar todos los perfumes con paginación
+# Vocabulario global
+VOCAB = sorted({n for notas in df['todas_notas'] for n in notas})
+
+def vectorizar_notas(notas, vocab):
+    return [1 if n in notas else 0 for n in vocab]
+
+MATRIZ_VECTORES = np.array([vectorizar_notas(notas, VOCAB) for notas in df['todas_notas']])
+
+# ------------------------
+# Endpoints
+# ------------------------
+
 @app.route('/perfumes', methods=['GET'])
 def get_perfumes():
     try:
-        # Parámetros de paginación
         pagina = int(request.args.get('pagina', 1))
         por_pagina = int(request.args.get('por_pagina', 50))
 
@@ -94,7 +113,6 @@ def get_perfumes():
         abort(400, description="Parámetros de paginación inválidos")
 
 
-# Endpoint: obtener un perfume por ID
 @app.route('/perfumes/<int:perfume_id>', methods=['GET'])
 def get_perfume(perfume_id):
     if perfume_id < 0 or perfume_id >= len(df):
@@ -104,13 +122,10 @@ def get_perfume(perfume_id):
     return jsonify(perfume)
 
 
-# Endpoint: búsqueda avanzada con múltiples filtros
 @app.route('/perfumes/search', methods=['GET'])
 def search_perfumes():
     try:
         query = df.copy()
-
-        # Filtros básicos de texto - USANDO NOMBRES EXACTOS
         filtros_texto = {
             'marca': 'marca',
             'genero': 'genero',
@@ -119,43 +134,35 @@ def search_perfumes():
             'año': 'año'
         }
 
+        # --- Filtros básicos (marca, genero, etc) ---
         for param, columna in filtros_texto.items():
             valor = request.args.get(param)
             if valor and columna in query.columns:
                 query = query[query[columna].astype(str).str.contains(valor, case=False, na=False)]
 
-        # BÚSQUEDA DE NOTAS EN CUALQUIER CAMPO DE NOTAS
-        nota = request.args.get('nota')
-        if nota:
-            # Campos donde buscar las notas
-            campos_notas = ['salida', 'corazon', 'base', 'main_accords']
-            campos_disponibles = [campo for campo in campos_notas if campo in query.columns]
+        # --- Buscar por varias notas (modo AND) ---
+        notas_param = request.args.get('nota')
+        if notas_param:
+            notas_buscar = [n.strip().lower() for n in notas_param.split(",") if n.strip()]
 
-            # Crear una máscara combinada para todos los campos de notas
-            mascara_notas = pd.Series([False] * len(query))
+            def contiene_todas(row):
+                notas_perfume = extraer_notas(row)
+                return all(n in notas_perfume for n in notas_buscar)
 
-            for campo in campos_disponibles:
-                if campo == 'main_accords':
-                    # Búsqueda especial para la lista de acordes
-                    mascara_campo = query[campo].apply(
-                        lambda acordes: any(nota.lower() in str(a).lower() for a in acordes)
-                    )
-                else:
-                    # Búsqueda en campos de texto normales
-                    mascara_campo = query[campo].astype(str).str.contains(nota, case=False, na=False)
+            query = query[query.apply(contiene_todas, axis=1)]
 
-                mascara_notas = mascara_notas | mascara_campo
+        # --- Buscar por varios acordes (modo AND) ---
+        acordes_param = request.args.get('acorde')
+        if acordes_param and 'main_accords' in query.columns:
+            acordes_buscar = [a.strip().lower() for a in acordes_param.split(",") if a.strip()]
 
-            query = query[mascara_notas]
+            def contiene_todos_acordes(acordes):
+                acordes_lower = [str(a).lower() for a in acordes]
+                return all(a in acordes_lower for a in acordes_buscar)
 
-        # Filtro por acordes (búsqueda en lista)
-        acorde = request.args.get('acorde')
-        if acorde and 'main_accords' in query.columns:
-            query = query[query['main_accords'].apply(
-                lambda acordes: any(acorde.lower() in str(a).lower() for a in acordes)
-            )]
+            query = query[query['main_accords'].apply(contiene_todos_acordes)]
 
-        # Ordenamiento
+        # --- Ordenar resultados ---
         orden = request.args.get('orden')
         if orden and orden in query.columns:
             ascendente = not request.args.get('desc', '').lower() == 'true'
@@ -165,8 +172,8 @@ def search_perfumes():
         return jsonify({
             'total_resultados': len(resultados),
             'parametros_busqueda': {
-                'nota': nota,
-                'acorde': acorde,
+                'nota': notas_param,
+                'acorde': acordes_param,
                 'marca': request.args.get('marca'),
                 'genero': request.args.get('genero'),
                 'perfume': request.args.get('perfume'),
@@ -179,22 +186,52 @@ def search_perfumes():
         abort(500, description=f"Error interno en la búsqueda: {str(e)}")
 
 
-# Manejador de errores personalizado
+# Nuevo endpoint: perfumes similares por nombre
+@app.route('/perfumes/similares', methods=['GET'])
+def get_similares_nombre():
+    nombre = request.args.get('nombre')
+    if not nombre:
+        abort(400, description="Debes proporcionar el parámetro 'nombre'")
+
+    coincidencias = df[df['perfume'].astype(str).str.contains(nombre, case=False, na=False)]
+    if coincidencias.empty:
+        abort(404, description=f"No se encontró ningún perfume que coincida con '{nombre}'")
+
+    # Tomar el primer match
+    idx_base = coincidencias.index[0]
+    base_vec = MATRIZ_VECTORES[idx_base].reshape(1, -1)
+
+    similitudes = cosine_similarity(base_vec, MATRIZ_VECTORES)[0]
+    df['score_similaridad'] = similitudes
+
+    similares = df[df.index != idx_base].sort_values('score_similaridad', ascending=False)
+
+    top_n = int(request.args.get('n', 10))
+    similares = similares.head(top_n)
+
+    # Convertir score a porcentaje
+    similares_out = filtrar_campos(similares).copy()
+    similares_out['similitud'] = (similares['score_similaridad'] * 100).round(1).astype(str) + "%"
+
+    return jsonify({
+        'base': filtrar_campos(df.iloc[[idx_base]]).iloc[0].to_dict(),
+        'similares': similares_out.to_dict(orient='records')
+    })
+
+
+# Manejadores de error
 @app.errorhandler(404)
 def no_encontrado(error):
     return jsonify({'error': str(error)}), 404
-
 
 @app.errorhandler(400)
 def solicitud_incorrecta(error):
     return jsonify({'error': str(error)}), 400
 
-
 @app.errorhandler(500)
 def error_interno(error):
     return jsonify({'error': str(error)}), 500
 
-
-# Esto debe estar al final del archivo
+# Main
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
