@@ -4,7 +4,9 @@ import os
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Función mejorada para cargar el CSV con validación de archivo
+# --------------------------------------------------
+# Función para cargar el CSV con validación de archivo
+# --------------------------------------------------
 def cargar_csv():
     archivo = "fra_perfumes.csv"
     if not os.path.exists(archivo):
@@ -27,14 +29,15 @@ def cargar_csv():
 
     raise Exception("No se pudo cargar el CSV con ninguna configuración probada")
 
-
+# --------------------------------------------------
 # Cargar el DataFrame
+# --------------------------------------------------
 try:
     df = cargar_csv()
     print("CSV cargado exitosamente")
     print(f"Dimensiones del DataFrame: {df.shape}")
 except Exception as e:
-    print(f"Error critico al cargar el CSV: {e}")
+    print(f"Error crítico al cargar el CSV: {e}")
     exit(1)
 
 # Crear columna combinada de main_accords
@@ -47,21 +50,17 @@ if main_cols:
 else:
     df['main_accords'] = [[] for _ in range(len(df))]
 
-# Campos a exponer en la API
+# Campos válidos para exponer en la API
 CAMPOS_VALIDOS = [
     'url', 'perfume', 'marca', 'genero', 'año', 'salida',
     'corazon', 'base', 'perfumista', 'perfumista 2', 'main_accords'
 ]
 CAMPOS_DISPONIBLES = [campo for campo in CAMPOS_VALIDOS if campo in df.columns]
-
 print("Columnas disponibles en la API:", CAMPOS_DISPONIBLES)
 
-# Crear la aplicación Flask
-app = Flask(__name__)
-
-# ------------------------
-# Funciones auxiliares
-# ------------------------
+# --------------------------------------------------
+# Preparación de datos
+# --------------------------------------------------
 def filtrar_campos(df_sub):
     return df_sub[CAMPOS_DISPONIBLES]
 
@@ -84,10 +83,14 @@ def vectorizar_notas(notas, vocab):
 
 MATRIZ_VECTORES = np.array([vectorizar_notas(notas, VOCAB) for notas in df['todas_notas']])
 
-# ------------------------
-# Endpoints
-# ------------------------
+# --------------------------------------------------
+# Crear la aplicación Flask
+# --------------------------------------------------
+app = Flask(__name__)
 
+# --------------------------------------------------
+# Endpoints
+# --------------------------------------------------
 @app.route('/perfumes', methods=['GET'])
 def get_perfumes():
     try:
@@ -112,16 +115,16 @@ def get_perfumes():
     except ValueError:
         abort(400, description="Parámetros de paginación inválidos")
 
-
 @app.route('/perfumes/<int:perfume_id>', methods=['GET'])
 def get_perfume(perfume_id):
     if perfume_id < 0 or perfume_id >= len(df):
         abort(404, description=f"Perfume ID {perfume_id} no encontrado. El rango válido es 0-{len(df) - 1}")
-
     perfume = filtrar_campos(df.iloc[[perfume_id]]).iloc[0].to_dict()
     return jsonify(perfume)
 
-
+# --------------------------------------------------
+# Endpoint de búsqueda corregido
+# --------------------------------------------------
 @app.route('/perfumes/search', methods=['GET'])
 def search_perfumes():
     try:
@@ -138,7 +141,12 @@ def search_perfumes():
         for param, columna in filtros_texto.items():
             valor = request.args.get(param)
             if valor and columna in query.columns:
-                query = query[query[columna].astype(str).str.contains(valor, case=False, na=False)]
+                if columna == 'genero':
+                    # ✅ Coincidencia exacta (no parcial)
+                    query = query[query[columna].astype(str).str.lower() == valor.lower()]
+                else:
+                    # Búsqueda parcial (como antes)
+                    query = query[query[columna].astype(str).str.contains(valor, case=False, na=False)]
 
         # --- Buscar por varias notas (modo AND) ---
         notas_param = request.args.get('nota')
@@ -185,8 +193,9 @@ def search_perfumes():
     except Exception as e:
         abort(500, description=f"Error interno en la búsqueda: {str(e)}")
 
-
-# Nuevo endpoint: perfumes similares por nombre
+# --------------------------------------------------
+# Endpoint de perfumes similares
+# --------------------------------------------------
 @app.route('/perfumes/similares', methods=['GET'])
 def get_similares_nombre():
     nombre = request.args.get('nombre')
@@ -197,7 +206,6 @@ def get_similares_nombre():
     if coincidencias.empty:
         abort(404, description=f"No se encontró ningún perfume que coincida con '{nombre}'")
 
-    # Tomar el primer match
     idx_base = coincidencias.index[0]
     base_vec = MATRIZ_VECTORES[idx_base].reshape(1, -1)
 
@@ -205,11 +213,9 @@ def get_similares_nombre():
     df['score_similaridad'] = similitudes
 
     similares = df[df.index != idx_base].sort_values('score_similaridad', ascending=False)
-
     top_n = int(request.args.get('n', 10))
     similares = similares.head(top_n)
 
-    # Convertir score a porcentaje
     similares_out = filtrar_campos(similares).copy()
     similares_out['similitud'] = (similares['score_similaridad'] * 100).round(1).astype(str) + "%"
 
@@ -218,8 +224,9 @@ def get_similares_nombre():
         'similares': similares_out.to_dict(orient='records')
     })
 
-
+# --------------------------------------------------
 # Manejadores de error
+# --------------------------------------------------
 @app.errorhandler(404)
 def no_encontrado(error):
     return jsonify({'error': str(error)}), 404
@@ -232,6 +239,8 @@ def solicitud_incorrecta(error):
 def error_interno(error):
     return jsonify({'error': str(error)}), 500
 
+# --------------------------------------------------
 # Main
+# --------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
