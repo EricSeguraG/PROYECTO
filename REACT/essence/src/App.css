@@ -5,10 +5,10 @@
   --primary-bg: linear-gradient(135deg, #000000, #111111, #000000);
   --card-bg: linear-gradient(135deg, #000000, #000000, #000000);
   --header-bg: linear-gradient(135deg, #000000, #111111, #000000);
-  --gold-primary: #FFD700;
-  --gold-secondary: #FFEA00;
-  --gold-glow: rgba(255, 215, 0, 0.5); /* Aumentada opacidad */
-  --border-color: #FFD700;
+  --gold-primary: #ff43a7;
+  --gold-secondary: #ff43a7;
+  --gold-glow: rgb(255, 33, 155); /* Aumentada opacidad */
+  --border-color: #ff43a7;
   --text-primary: #ffffff;
   --text-secondary: #ffffff;
   --shadow-intensity: 0.5;
@@ -35,14 +35,14 @@
 }
 
 .App-header {
-  background-color: #000000;
+  background-color: #ffffff;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: calc(10px + 2vmin);
-  color: white;
+  color: rgb(0, 0, 0);
 }
 
 .App-link {
@@ -75,7 +75,7 @@ body {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: white;
+  background-color: rgb(255, 255, 255);
 }
 
 /* === Tarjeta principal (login/start) === */
@@ -102,15 +102,15 @@ body {
   font-weight: 800;
   margin-bottom: 0.5rem;
   font-family: "orbitron", sans-serif;
-  background: #000000;
+  background: #ffffff;
   padding: 15px 25px;
   border-radius: 12px;
   display: inline-block;
-  border: 2px solid #FFD700;
+  border: 2px solid #ff43a7;
   box-shadow: 
-    0 0 20px rgba(255, 215, 0, 0.7),
+    0 0 20px rgba(255, 33, 155),
     inset 0 0 15px rgba(255, 215, 0, 0.2);
-  color: #FFD700;
+  color: #ff43a7;
   animation: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -137,7 +137,7 @@ body {
 .btn {
   display: block;
   width: 100%;
-  background: linear-gradient(135deg, #000000, #0a0a0a, #000000);
+  background: linear-gradient(135deg, #ffffff, #ffffff, #ffffff);
   border: 1.5px solid var(--border-color); /* Borde más grueso */
   padding: 0.9rem;
   border-radius: 0.8rem;
@@ -148,10 +148,10 @@ body {
   transition: all 0.4s ease;
   box-shadow: 
     0 4px 15px rgba(0, 0, 0, calc(var(--shadow-intensity) + 0.1)),
-    0 0 25px rgba(255, 215, 0, 0.6), /* Glow más intenso */
-    inset 0 1px 0 rgba(255, 215, 0, 0.4); /* Borde interior más visible */
+    0 0 25px rgba(255, 33, 155), /* Glow más intenso */
+    inset 0 1px 0 rgba(255, 33, 155, 0.4); /* Borde interior más visible */
   
-  color: #FFD700;
+  color: #ff43a7;
   position: relative;
   overflow: hidden;
   will-change: transform, box-shadow;
@@ -163,11 +163,11 @@ body {
   transform: translateY(-4px);
   box-shadow: 
     0 8px 25px rgba(0, 0, 0, 0.8),
-    0 0 35px rgba(255, 215, 0, 0.7), /* Glow más fuerte en hover */
+    0 0 35px rgba(255, 33, 155), /* Glow más fuerte en hover */
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, #000000, #1a1a1a, #000000); /* Fondo más claro en hover */
-  color: #FFFFFF;
-  border-color: #FFEA00; /* Borde más brillante */
+  background: linear-gradient(135deg, #ff43a7, #ff43a7, #ff43a7); /* Fondo más claro en hover */
+  color: #ffffff;
+  border-color: #ff43a7; /* Borde más brillante */
 }
 
 .btn:focus {
@@ -180,22 +180,6 @@ body {
   transition: transform 0.1s ease;
 }
 
-/* Efecto de luz reflejada - MÁS VISIBLE */
-.btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 215, 0, 0.7), /* Mayor opacidad */
-    transparent
-  );
-  transition: left 0.6s ease;
-}
 
 .btn:hover::before {
   left: 100%;
@@ -203,12 +187,12 @@ body {
 
 .btn .icon {
   margin-right: 8px;
-  color: #FFFFFF;
+  color: #000000;
   transition: all 0.3s ease;
 }
 
 .btn:hover .icon {
-  color: #FFFFFF;
+  color: #000000;
   transform: scale(1.2); /* Más escala en hover */
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9)); /* Sombra más intensa */
 }
@@ -250,14 +234,14 @@ body {
   outline: none;
   transition: all 0.3s ease;
   font-size: 0.95rem;
-  background: #1a1a1a;
+  background: #887c7c62;
   color: var(--text-primary);
   box-sizing: border-box;
 }
 
 .input:focus {
   border-color: var(--gold-primary);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.4); /* Sombra más intensa */
+  box-shadow: 0 0 0 3px rgba(255, 33, 155,0.8); /* Sombra más intensa */
   background: #222222;
 }
 
@@ -327,7 +311,7 @@ body {
 }
 
 .exit-btn {
-  background: #ff5555;
+  background: #ff43a7;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -335,7 +319,7 @@ body {
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgb(237, 255, 35);
+  box-shadow: 0 2px 8px rgb(255, 255, 255);
 }
 
 .exit-btn:hover {
@@ -346,7 +330,7 @@ body {
 
 /* === Botones del Menú Principal - EFECTOS INTENSIFICADOS === */
 .menu-btn {
-  background: linear-gradient(135deg, #000000, #0a0a0a, #000000);
+  background: linear-gradient(135deg, #ffffff, #ffffff, #ffffff);
   border: 1.5px solid var(--border-color); /* Borde más grueso */
   border-radius: 1rem;
   padding: 1.5rem;
@@ -354,8 +338,8 @@ body {
   font-weight: 600;
   box-shadow: 
     0 4px 15px rgba(0, 0, 0, calc(var(--shadow-intensity) + 0.1)),
-    0 0 25px rgba(255, 215, 0, 0.6), /* Glow más intenso */
-    inset 0 1px 0 rgba(255, 215, 0, 0.4); /* Borde interior más visible */
+    0 0 25px rgba(255, 33, 155, 0.6), /* Glow más intenso */
+    inset 0 1px 0 rgba(255, 33, 155, 0.4); /* Borde interior más visible */
   cursor: pointer;
   transition: all 0.4s ease;
   text-align: center;
@@ -364,7 +348,7 @@ body {
   align-items: center;
   gap: 8px;
   
-  color: #FFD700;
+  color: #ff43a7;
   position: relative;
   overflow: hidden;
   will-change: transform, box-shadow;
@@ -375,12 +359,12 @@ body {
 .menu-btn:hover {
   transform: translateY(-4px);
   box-shadow: 
-    0 8px 25px rgba(0, 0, 0, 0.8),
-    0 0 35px rgba(255, 215, 0, 0.7), /* Glow más fuerte en hover */
+    0 8px 25px rgb(0, 0, 0),
+    0 0 35px rgba(255, 33, 155, 0.9), /* Glow más fuerte en hover */
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, #000000, #1a1a1a, #000000); /* Fondo más claro en hover */
-  color: #FFFFFF;
-  border-color: #FFEA00; /* Borde más brillante */
+  background: linear-gradient(135deg, #ffffff, #ffffff, #ffffff); /* Fondo más claro en hover */
+  color: #ff43a7;
+  border-color: #ff43a7; /* Borde más brillante */
 }
 
 .menu-btn:focus {
@@ -404,7 +388,7 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 215, 0, 0.7), /* Mayor opacidad */
+    rgba(255, 33, 155, 0.7), /* Mayor opacidad */
     transparent
   );
   transition: left 0.6s ease;
@@ -416,15 +400,15 @@ body {
 
 /* Iconos dentro de los botones */
 .menu-btn svg {
-  color: #FFFFFF;
+  color: #000000;
   stroke-width: 1.5;
   transition: all 0.3s ease;
 }
 
 .menu-btn:hover svg {
-  color: #FFFFFF;
+  color: #000000;
   transform: scale(1.2); /* Más escala en hover */
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9)); /* Sombra más intensa */
+  filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.9)); /* Sombra más intensa */
 }
 
 /* Estados loading para botones del menú */
@@ -499,7 +483,7 @@ body {
   bottom: 30px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(34, 34, 34, 0.95);
+  background: rgba(0, 0, 0, 0.95);
   color: var(--text-primary);
   padding: 12px 20px;
   border-radius: 10px;
@@ -521,7 +505,7 @@ body {
 .toast.error {
   background: rgba(34, 34, 34, 0.95);
   border: 1px solid var(--error-color);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, var(--shadow-intensity)), 0 0 10px rgba(255, 68, 68, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, var(--shadow-intensity)), 0 0 10px rgba(255, 33, 155, 0.3);
 }
 
 /* === Animaciones === */
