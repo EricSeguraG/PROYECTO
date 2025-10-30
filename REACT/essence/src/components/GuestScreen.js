@@ -40,7 +40,7 @@ const GuestScreen = ({ onExit }) => {
               key={i}
               className={`menu-btn ${isDisabled ? "disabled" : ""}`}
               onClick={() =>
-                isDisabled && showToast("🔒 Inicia sesión para acceder.")
+                isDisabled && showToast("🔒 INICIA SESION PARA ACCEDER.")
               }
             >
               {item.icon}
