@@ -5,6 +5,8 @@ export const useAuth = () => {
   const [isRegister, setIsRegister] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [lastname, setLastname] = useState("");
   const [message, setMessage] = useState("");
 
   // Cargar usuario desde localStorage al iniciar
@@ -17,7 +19,12 @@ export const useAuth = () => {
 
   const handleAuth = () => {
     if (!username || !password) {
-      setMessage("Por favor completa ambos campos.");
+      setMessage("Por favor completa los campos obligatorios.");
+      return false;
+    }
+
+    if (isRegister && (!name || !lastname)) {
+      setMessage("Por favor completa todos los campos.");
       return false;
     }
 
@@ -26,24 +33,34 @@ export const useAuth = () => {
 
     if (isRegister) {
       if (existingUser) {
-        setMessage("El usuario ya existe.");
+        setMessage("El nombre de usuario ya existe.");
         return false;
       } else {
-        users.push({ username, password });
+        const newUser = { username, password, name, lastname };
+        users.push(newUser);
         localStorage.setItem("users", JSON.stringify(users));
-        setMessage("Registro exitoso ✅ Ahora puedes iniciar sesión.");
+        setMessage("✅ REGISTRADO CORRECTAMENTE \n  Ahora puedes iniciar sesión.");
+        // Cambiar a modo login automáticamente después del registro exitoso
         setIsRegister(false);
-        return true;
+        // Limpiar solo los campos de nombre y apellidos, mantener usuario y contraseña
+        setName("");
+        setLastname("");
+        return false; // No acceder al modo user
       }
     } else {
-      if (!existingUser || existingUser.password !== password) {
-        setMessage("Credenciales incorrectas.");
+      // Modo login
+      if (!existingUser) {
+        setMessage("Usuario no encontrado.");
+        return false;
+      } else if (existingUser.password !== password) {
+        setMessage("Contraseña incorrecta.");
         return false;
       } else {
+        // Login exitoso
         localStorage.setItem("sessionUser", JSON.stringify(existingUser));
         setUser(existingUser);
         setMessage("");
-        return true;
+        return true; // Acceder al modo user
       }
     }
   };
@@ -51,14 +68,14 @@ export const useAuth = () => {
   const handleLogout = () => {
     localStorage.removeItem("sessionUser");
     setUser(null);
-    setUsername("");
-    setPassword("");
-    setMessage("");
+    resetForm();
   };
 
   const resetForm = () => {
     setUsername("");
     setPassword("");
+    setName("");
+    setLastname("");
     setMessage("");
   };
 
@@ -71,6 +88,10 @@ export const useAuth = () => {
     setUsername,
     password,
     setPassword,
+    name,
+    setName,
+    lastname,
+    setLastname,
     message,
     setMessage,
     handleAuth,

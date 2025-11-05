@@ -16,7 +16,9 @@ const UserScreen = ({ user, onLogout }) => {
       <header className="header">
         <div className="header-left">
           <h1 className="logo">ESSENCE</h1>
-          <span className="user-mode-label">[USER: {user?.username}]</span>
+          <span className="user-mode-label">
+            [USER: {user?.name} {user?.lastname}]
+          </span>
         </div>
         <button className="exit-btn" onClick={onLogout}>
           <Home size={16} /> Salir

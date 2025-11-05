@@ -14,6 +14,7 @@
   --shadow-intensity: 0.5;
   --error-color: #ff4444;
   --success-color: #4CAF50;
+  --success-register: #ffffff;
 }
 
 /* ===============================
@@ -121,7 +122,7 @@ body {
 /* Efecto sutil al hover */
 .logo:hover {
   box-shadow: 
-    0 0 25px rgba(255, 215, 0, 0.9), /* Más intenso en hover */
+    0 0 25px rgba(255, 215, 0, 0.9), 
     inset 0 0 20px rgba(255, 215, 0, 0.3);
   transform: scale(1.02);
 }
@@ -255,7 +256,7 @@ body {
 }
 
 .error-message {
-  color: var(--error-color);
+  color: var(--success-register);
   font-size: 0.8rem;
   margin-top: 0.25rem;
   text-align: left;
@@ -263,7 +264,7 @@ body {
 
 /* === Mensajes y enlaces === */
 .message {
-  color: var(--error-color);
+  color: var(--success-register);
   font-size: 0.9rem;
   margin-top: 8px;
 }

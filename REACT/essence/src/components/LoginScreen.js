@@ -6,7 +6,11 @@ const LoginScreen = ({
   username, 
   setUsername, 
   password, 
-  setPassword, 
+  setPassword,
+  name,
+  setName,
+  lastname,
+  setLastname,
   message, 
   handleAuth, 
   resetForm,
@@ -29,9 +33,27 @@ const LoginScreen = ({
         <p className="subtitle">{isRegister ? "Registro" : "Iniciar Sesión"}</p>
 
         <form onSubmit={handleSubmit}>
+          {isRegister && (
+            <>
+              <input
+                type="text"
+                placeholder="Nombre"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="input"
+              />
+              <input
+                type="text"
+                placeholder="Apellidos"
+                value={lastname}
+                onChange={(e) => setLastname(e.target.value)}
+                className="input"
+              />
+            </>
+          )}
           <input
             type="text"
-            placeholder="Usuario"
+            placeholder="Nombre de usuario"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="input"
@@ -44,11 +66,15 @@ const LoginScreen = ({
             className="input"
           />
           <button type="submit" className="btn">
-            {isRegister ? "Registrarse" : "ENTRAR"}
+            {isRegister ? "REGISTRAR" : "ENTRAR"}
           </button>
         </form>
 
-        <p className="message">{message}</p>
+        {message && (
+          <p className="message" style={{ whiteSpace: "pre-line" }}>
+            {message}
+          </p>
+        )}
 
         <button className="link" onClick={toggleMode}>
           {isRegister
