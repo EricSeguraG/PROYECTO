@@ -4,6 +4,42 @@ import { Heart, BookOpen, FlaskConical, Copy, Star, Search, Home } from "lucide-
 const GuestScreen = ({ onExit }) => {
   const [toast, setToast] = useState("");
 
+  const containerStyle = {
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'relative',
+    overflow: 'hidden'
+  };
+
+  const videoStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    zIndex: 0
+  };
+
+  const overlayStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    background: 'rgba(0, 0, 0, 0.4)', // Overlay para mejor contraste
+    zIndex: 1
+  };
+
+  const contentStyle = {
+    position: 'relative',
+    zIndex: 2,
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column'
+  };
+
   const menuItems = [
     { icon: <Heart />, label: "WISHLIST" },
     { icon: <BookOpen />, label: "MI COLECCIÓN" },
@@ -21,37 +57,55 @@ const GuestScreen = ({ onExit }) => {
   };
 
   return (
-    <div className="guest-mode">
-      <header className="header">
-        <div className="header-left">
-          <h1 className="logo">ESSENCE</h1>
-          <span className="user-mode-label">[GUEST MODE]</span>
-        </div>
-        <button className="exit-btn" onClick={onExit}>
-          <Home size={16} /> Salir
-        </button>
-      </header>
+    <div style={containerStyle}>
+      {/* Video de fondo */}
+      <video 
+        autoPlay 
+        muted 
+        loop 
+        playsInline
+        style={videoStyle}
+      >
+        <source src="/videos/vid2.mp4" type="video/mp4" />
+        Tu navegador no soporta el elemento de video.
+      </video>
+      
+      {/* Overlay para mejor contraste */}
+      <div style={overlayStyle}></div>
 
-      <main className="menu-grid">
-        {menuItems.map((item, i) => {
-          const isDisabled = disabledLabels.includes(item.label);
-          return (
-            <button
-              key={i}
-              className={`menu-btn ${isDisabled ? "disabled" : ""}`}
-              onClick={() =>
-                isDisabled && showToast("🔒 INICIA SESION PARA ACCEDER.")
-              }
-            >
-              {item.icon}
-              {item.label}
-              {isDisabled && <span className="disabled-cross"> ❌</span>}
-            </button>
-          );
-        })}
-      </main>
+      {/* Contenido */}
+      <div style={contentStyle}>
+        <header className="header" style={{ position: 'relative', zIndex: 3 }}>
+          <div className="header-left">
+            <h1 className="logo">ESSENCE</h1>
+            <span className="user-mode-label">[GUEST MODE]</span>
+          </div>
+          <button className="exit-btn" onClick={onExit}>
+            <Home size={16} /> Salir
+          </button>
+        </header>
 
-      {toast && <div className="toast">{toast}</div>}
+        <main className="menu-grid" style={{ position: 'relative', zIndex: 2, padding: '2rem' }}>
+          {menuItems.map((item, i) => {
+            const isDisabled = disabledLabels.includes(item.label);
+            return (
+              <button
+                key={i}
+                className={`menu-btn ${isDisabled ? "disabled" : ""}`}
+                onClick={() =>
+                  isDisabled && showToast("🔒 INICIA SESION PARA ACCEDER.")
+                }
+              >
+                {item.icon}
+                {item.label}
+                {isDisabled && <span className="disabled-cross"> ❌</span>}
+              </button>
+            );
+          })}
+        </main>
+
+        {toast && <div className="toast" style={{ position: 'fixed', zIndex: 4 }}>{toast}</div>}
+      </div>
     </div>
   );
 };
