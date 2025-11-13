@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Heart, BookOpen, FlaskConical, Copy, Star, Search, Home } from "lucide-react";
 
-const GuestScreen = ({ onExit }) => {
+const GuestScreen = ({ onExit, onSearchClick }) => {
   const [toast, setToast] = useState("");
 
   const containerStyle = {
@@ -28,7 +28,7 @@ const GuestScreen = ({ onExit }) => {
     left: 0,
     width: '100%',
     height: '100%',
-    background: 'rgba(0, 0, 0, 0.4)', // Overlay para mejor contraste
+    background: 'rgba(0, 0, 0, 0.4)',
     zIndex: 1
   };
 
@@ -41,15 +41,41 @@ const GuestScreen = ({ onExit }) => {
   };
 
   const menuItems = [
-    { icon: <Heart />, label: "WISHLIST" },
-    { icon: <BookOpen />, label: "MI COLECCIÓN" },
-    { icon: <FlaskConical />, label: "PERFUMES" },
-    { icon: <Copy />, label: "CLONES/INSPIRACIONES" },
-    { icon: <Star />, label: "CELEBRITIES" },
-    { icon: <Search />, label: "MULTIBUSCADOR" },
+    { 
+      icon: <Heart />, 
+      label: "WISHLIST",
+      disabled: true
+    },
+    { 
+      icon: <BookOpen />, 
+      label: "MI COLECCIÓN",
+      disabled: true
+    },
+    { 
+      icon: <FlaskConical />, 
+      label: "PERFUMES",
+      disabled: false,
+      action: () => showToast("🔍 Funcionalidad de perfumes en desarrollo")
+    },
+    { 
+      icon: <Copy />, 
+      label: "CLONES/INSPIRACIONES",
+      disabled: false,
+      action: () => showToast("🔍 Funcionalidad de clones en desarrollo")
+    },
+    { 
+      icon: <Star />, 
+      label: "CELEBRITIES",
+      disabled: false,
+      action: () => showToast("🔍 Funcionalidad de celebrities en desarrollo")
+    },
+    { 
+      icon: <Search />, 
+      label: "MULTIBUSCADOR",
+      disabled: false,
+      action: onSearchClick
+    },
   ];
-
-  const disabledLabels = ["WISHLIST", "MI COLECCIÓN"];
 
   const showToast = (text) => {
     setToast(text);
@@ -58,22 +84,13 @@ const GuestScreen = ({ onExit }) => {
 
   return (
     <div style={containerStyle}>
-      {/* Video de fondo */}
-      <video 
-        autoPlay 
-        muted 
-        loop 
-        playsInline
-        style={videoStyle}
-      >
+      <video autoPlay muted loop playsInline style={videoStyle}>
         <source src="/videos/vid2.mp4" type="video/mp4" />
         Tu navegador no soporta el elemento de video.
       </video>
       
-      {/* Overlay para mejor contraste */}
       <div style={overlayStyle}></div>
 
-      {/* Contenido */}
       <div style={contentStyle}>
         <header className="header" style={{ position: 'relative', zIndex: 3 }}>
           <div className="header-left">
@@ -86,22 +103,23 @@ const GuestScreen = ({ onExit }) => {
         </header>
 
         <main className="menu-grid" style={{ position: 'relative', zIndex: 2, padding: '2rem' }}>
-          {menuItems.map((item, i) => {
-            const isDisabled = disabledLabels.includes(item.label);
-            return (
-              <button
-                key={i}
-                className={`menu-btn ${isDisabled ? "disabled" : ""}`}
-                onClick={() =>
-                  isDisabled && showToast("🔒 INICIA SESION PARA ACCEDER.")
+          {menuItems.map((item, i) => (
+            <button
+              key={i}
+              className={`menu-btn ${item.disabled ? "disabled" : ""}`}
+              onClick={() => {
+                if (item.disabled) {
+                  showToast("🔒 INICIA SESION PARA ACCEDER.");
+                } else if (item.action) {
+                  item.action();
                 }
-              >
-                {item.icon}
-                {item.label}
-                {isDisabled && <span className="disabled-cross"> ❌</span>}
-              </button>
-            );
-          })}
+              }}
+            >
+              {item.icon}
+              {item.label}
+              {item.disabled && <span className="disabled-cross"> ❌</span>}
+            </button>
+          ))}
         </main>
 
         {toast && <div className="toast" style={{ position: 'fixed', zIndex: 4 }}>{toast}</div>}

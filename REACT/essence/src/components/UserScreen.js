@@ -1,7 +1,7 @@
 import React from "react";
 import { Heart, BookOpen, FlaskConical, Copy, Star, Search, Home } from "lucide-react";
 
-const UserScreen = ({ user, onLogout }) => {
+const UserScreen = ({ user, onLogout, onSearchClick }) => {
   const containerStyle = {
     minHeight: '100vh',
     display: 'flex',
@@ -44,32 +44,29 @@ const UserScreen = ({ user, onLogout }) => {
     { icon: <FlaskConical />, label: "PERFUMES" },
     { icon: <Copy />, label: "CLONES/INSPIRACIONES" },
     { icon: <Star />, label: "CELEBRITIES" },
-    { icon: <Search />, label: "MULTIBUSCADOR" },
+    { 
+      icon: <Search />, 
+      label: "MULTIBUSCADOR",
+      action: onSearchClick
+    },
   ];
 
   return (
     <div style={containerStyle}>
-      {/* Video de fondo */}
-      <video 
-        autoPlay 
-        muted 
-        loop 
-        playsInline
-        style={videoStyle}
-      >
+      <video autoPlay muted loop playsInline style={videoStyle}>
         <source src="/videos/vid.mp4" type="video/mp4" />
         Tu navegador no soporta el elemento de video.
       </video>
       
-      {/* Overlay para mejor contraste */}
       <div style={overlayStyle}></div>
 
-      {/* Contenido */}
       <div style={contentStyle}>
         <header className="header" style={{ position: 'relative', zIndex: 3 }}>
           <div className="header-left">
             <h1 className="logo">ESSENCE</h1>
-            <span className="user-mode-label">[USER: {user?.name} {user?.lastname}]</span>
+            <span className="user-mode-label">
+              {user?.name || "Usuario"} {user?.lastname || ""}
+            </span>
           </div>
           <button className="exit-btn" onClick={onLogout}>
             <Home size={16} /> Salir
@@ -78,7 +75,11 @@ const UserScreen = ({ user, onLogout }) => {
 
         <main className="menu-grid" style={{ position: 'relative', zIndex: 2, padding: '2rem' }}>
           {menuItems.map((item, i) => (
-            <button key={i} className="menu-btn">
+            <button 
+              key={i} 
+              className="menu-btn" 
+              onClick={item.action || (() => {})}
+            >
               {item.icon}
               {item.label}
             </button>

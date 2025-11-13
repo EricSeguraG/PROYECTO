@@ -1,14 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "./hooks/useAuth";
 import StartScreen from "./components/StartScreen";
 import LoginScreen from "./components/LoginScreen";
 import UserScreen from "./components/UserScreen";
 import GuestScreen from "./components/GuestScreen";
+import SearchScreen from "./components/SearchScreen";
 import "./App.css";
 
 function App() {
-  const [mode, setMode] = useState("start"); // start | login | user | guest
+  const [mode, setMode] = useState("start");
+  const [searchMode, setSearchMode] = useState("user");
   const auth = useAuth();
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("sessionUser");
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        auth.setUser(userData);
+      } catch (error) {
+        console.error("Error parsing stored user:", error);
+        localStorage.removeItem("sessionUser");
+      }
+    }
+  }, [auth]);
 
   const handleAuthSuccess = () => {
     if (auth.handleAuth()) {
@@ -21,7 +36,11 @@ function App() {
     setMode("start");
   };
 
-  // Renderizar pantallas
+  const handleSearchClick = (fromMode) => {
+    setSearchMode(fromMode);
+    setMode("search");
+  };
+
   if (mode === "start") {
     return (
       <StartScreen
@@ -45,12 +64,34 @@ function App() {
   }
 
   if (mode === "user") {
-    return <UserScreen user={auth.user} onLogout={handleLogout} />;
+    return (
+      <UserScreen 
+        user={auth.user} 
+        onLogout={handleLogout}
+        onSearchClick={() => handleSearchClick("user")}
+      />
+    );
   }
 
   if (mode === "guest") {
-    return <GuestScreen onExit={() => setMode("start")} />;
+    return (
+      <GuestScreen 
+        onExit={() => setMode("start")}
+        onSearchClick={() => handleSearchClick("guest")}
+      />
+    );
   }
+
+  if (mode === "search") {
+    return (
+      <SearchScreen 
+        onBack={() => setMode(searchMode)}
+        searchMode={searchMode}
+      />
+    );
+  }
+
+  return null;
 }
 
 export default App;

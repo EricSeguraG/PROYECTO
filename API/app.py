@@ -3,6 +3,11 @@ from flask import Flask, jsonify, request, abort
 import os
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+
 
 # --------------------------------------------------
 # Función para cargar el CSV con validación de archivo

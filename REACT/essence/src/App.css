@@ -107,13 +107,13 @@ body {
   width: 100%;
 }
 
-/* Contenedor principal */
+/* Contenedor principal - SOLO para LoginScreen */
 .container {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100vh;
-  position: relative;
+  background-color: rgb(243,229,171); /* Fondo original beige */
 }
 
 /* === Tarjeta principal (login/start) === */
@@ -675,5 +675,9 @@ body {
   
   .video-background-container {
     background: var(--primary-bg);
+  }
+  
+  .container {
+    background-color: rgb(243,229,171); /* Mantener fondo beige */
   }
 }

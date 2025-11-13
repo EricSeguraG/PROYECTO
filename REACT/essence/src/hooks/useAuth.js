@@ -9,11 +9,17 @@ export const useAuth = () => {
   const [lastname, setLastname] = useState("");
   const [message, setMessage] = useState("");
 
-  // Cargar usuario desde localStorage al iniciar
+  // Cargar usuario desde localStorage al iniciar (solo para tener los datos)
   useEffect(() => {
     const storedUser = localStorage.getItem("sessionUser");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+      } catch (error) {
+        console.error("Error parsing stored user:", error);
+        localStorage.removeItem("sessionUser");
+      }
     }
   }, []);
 
@@ -40,12 +46,10 @@ export const useAuth = () => {
         users.push(newUser);
         localStorage.setItem("users", JSON.stringify(users));
         setMessage("✅ REGISTRADO CORRECTAMENTE \n  Ahora puedes iniciar sesión.");
-        // Cambiar a modo login automáticamente después del registro exitoso
         setIsRegister(false);
-        // Limpiar solo los campos de nombre y apellidos, mantener usuario y contraseña
         setName("");
         setLastname("");
-        return false; // No acceder al modo user
+        return false;
       }
     } else {
       // Modo login
@@ -60,7 +64,7 @@ export const useAuth = () => {
         localStorage.setItem("sessionUser", JSON.stringify(existingUser));
         setUser(existingUser);
         setMessage("");
-        return true; // Acceder al modo user
+        return true;
       }
     }
   };
