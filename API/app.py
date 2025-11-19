@@ -4,13 +4,35 @@ import os
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from flask_cors import CORS
+import math
 
+# --------------------------------------------------
+# Crear la aplicación Flask con CORS
+# --------------------------------------------------
 app = Flask(__name__)
 CORS(app)
 
 
 # --------------------------------------------------
-# Función para cargar el CSV con validación de archivo
+# Función para limpiar valores NaN/None antes de convertir a JSON
+# --------------------------------------------------
+def limpiar_para_json(obj):
+    """Convierte valores NaN/None a strings vacíos para JSON válido"""
+    if isinstance(obj, dict):
+        return {k: limpiar_para_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [limpiar_para_json(v) for v in obj]
+    elif pd.isna(obj) or obj is None or (isinstance(obj, float) and math.isnan(obj)):
+        return ""
+    elif isinstance(obj, (int, float)):
+        # Mantener números válidos
+        return obj
+    else:
+        return obj
+
+
+# --------------------------------------------------
+# Función para cargar el CSV
 # --------------------------------------------------
 def cargar_csv():
     archivo = "fra_perfumes.csv"
@@ -27,12 +49,16 @@ def cargar_csv():
 
     for i, config in enumerate(configuraciones):
         try:
-            return pd.read_csv(archivo, **config)
+            df = pd.read_csv(archivo, **config)
+            # Limpiar NaN/None del DataFrame inmediatamente
+            df = df.fillna("")
+            return df
         except Exception as e:
             print(f"Intento {i + 1} fallido: {e}")
             continue
 
     raise Exception("No se pudo cargar el CSV con ninguna configuración probada")
+
 
 # --------------------------------------------------
 # Cargar el DataFrame
@@ -63,11 +89,13 @@ CAMPOS_VALIDOS = [
 CAMPOS_DISPONIBLES = [campo for campo in CAMPOS_VALIDOS if campo in df.columns]
 print("Columnas disponibles en la API:", CAMPOS_DISPONIBLES)
 
+
 # --------------------------------------------------
 # Preparación de datos
 # --------------------------------------------------
 def filtrar_campos(df_sub):
     return df_sub[CAMPOS_DISPONIBLES]
+
 
 def extraer_notas(row):
     notas = []
@@ -78,23 +106,22 @@ def extraer_notas(row):
         notas += [str(n).lower() for n in row['main_accords']]
     return list(set(notas))
 
+
 df['todas_notas'] = df.apply(extraer_notas, axis=1)
 
 # Vocabulario global
 VOCAB = sorted({n for notas in df['todas_notas'] for n in notas})
 
+
 def vectorizar_notas(notas, vocab):
     return [1 if n in notas else 0 for n in vocab]
 
+
 MATRIZ_VECTORES = np.array([vectorizar_notas(notas, VOCAB) for notas in df['todas_notas']])
 
-# --------------------------------------------------
-# Crear la aplicación Flask
-# --------------------------------------------------
-app = Flask(__name__)
 
 # --------------------------------------------------
-# Endpoints
+# Endpoints CORREGIDOS
 # --------------------------------------------------
 @app.route('/perfumes', methods=['GET'])
 def get_perfumes():
@@ -111,25 +138,28 @@ def get_perfumes():
         subset = df.iloc[inicio:fin]
         perfumes = filtrar_campos(subset).to_dict(orient='records')
 
+        # LIMPIAR para JSON válido
+        perfumes_limpios = [limpiar_para_json(perfume) for perfume in perfumes]
+
         return jsonify({
             'pagina': pagina,
             'por_pagina': por_pagina,
             'total': len(df),
-            'perfumes': perfumes
+            'perfumes': perfumes_limpios
         })
     except ValueError:
         abort(400, description="Parámetros de paginación inválidos")
+
 
 @app.route('/perfumes/<int:perfume_id>', methods=['GET'])
 def get_perfume(perfume_id):
     if perfume_id < 0 or perfume_id >= len(df):
         abort(404, description=f"Perfume ID {perfume_id} no encontrado. El rango válido es 0-{len(df) - 1}")
     perfume = filtrar_campos(df.iloc[[perfume_id]]).iloc[0].to_dict()
-    return jsonify(perfume)
+    perfume_limpio = limpiar_para_json(perfume)
+    return jsonify(perfume_limpio)
 
-# --------------------------------------------------
-# Endpoint de búsqueda corregido
-# --------------------------------------------------
+
 @app.route('/perfumes/search', methods=['GET'])
 def search_perfumes():
     try:
@@ -142,18 +172,16 @@ def search_perfumes():
             'año': 'año'
         }
 
-        # --- Filtros básicos (marca, genero, etc) ---
+        # --- Filtros básicos ---
         for param, columna in filtros_texto.items():
             valor = request.args.get(param)
             if valor and columna in query.columns:
                 if columna == 'genero':
-                    # ✅ Coincidencia exacta (no parcial)
                     query = query[query[columna].astype(str).str.lower() == valor.lower()]
                 else:
-                    # Búsqueda parcial (como antes)
                     query = query[query[columna].astype(str).str.contains(valor, case=False, na=False)]
 
-        # --- Buscar por varias notas (modo AND) ---
+        # --- Buscar por notas ---
         notas_param = request.args.get('nota')
         if notas_param:
             notas_buscar = [n.strip().lower() for n in notas_param.split(",") if n.strip()]
@@ -164,7 +192,7 @@ def search_perfumes():
 
             query = query[query.apply(contiene_todas, axis=1)]
 
-        # --- Buscar por varios acordes (modo AND) ---
+        # --- Buscar por acordes ---
         acordes_param = request.args.get('acorde')
         if acordes_param and 'main_accords' in query.columns:
             acordes_buscar = [a.strip().lower() for a in acordes_param.split(",") if a.strip()]
@@ -182,8 +210,10 @@ def search_perfumes():
             query = query.sort_values(by=orden, ascending=ascendente)
 
         resultados = filtrar_campos(query).to_dict(orient='records')
+        resultados_limpios = [limpiar_para_json(resultado) for resultado in resultados]
+
         return jsonify({
-            'total_resultados': len(resultados),
+            'total_resultados': len(resultados_limpios),
             'parametros_busqueda': {
                 'nota': notas_param,
                 'acorde': acordes_param,
@@ -192,15 +222,13 @@ def search_perfumes():
                 'perfume': request.args.get('perfume'),
                 'año': request.args.get('año')
             },
-            'resultados': resultados
+            'resultados': resultados_limpios
         })
 
     except Exception as e:
         abort(500, description=f"Error interno en la búsqueda: {str(e)}")
 
-# --------------------------------------------------
-# Endpoint de perfumes similares
-# --------------------------------------------------
+
 @app.route('/perfumes/similares', methods=['GET'])
 def get_similares_nombre():
     nombre = request.args.get('nombre')
@@ -224,10 +252,15 @@ def get_similares_nombre():
     similares_out = filtrar_campos(similares).copy()
     similares_out['similitud'] = (similares['score_similaridad'] * 100).round(1).astype(str) + "%"
 
+    # LIMPIAR para JSON válido
+    base_limpio = limpiar_para_json(filtrar_campos(df.iloc[[idx_base]]).iloc[0].to_dict())
+    similares_limpios = [limpiar_para_json(perfume) for perfume in similares_out.to_dict(orient='records')]
+
     return jsonify({
-        'base': filtrar_campos(df.iloc[[idx_base]]).iloc[0].to_dict(),
-        'similares': similares_out.to_dict(orient='records')
+        'base': base_limpio,
+        'similares': similares_limpios
     })
+
 
 # --------------------------------------------------
 # Manejadores de error
@@ -236,13 +269,16 @@ def get_similares_nombre():
 def no_encontrado(error):
     return jsonify({'error': str(error)}), 404
 
+
 @app.errorhandler(400)
 def solicitud_incorrecta(error):
     return jsonify({'error': str(error)}), 400
 
+
 @app.errorhandler(500)
 def error_interno(error):
     return jsonify({'error': str(error)}), 500
+
 
 # --------------------------------------------------
 # Main

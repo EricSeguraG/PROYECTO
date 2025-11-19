@@ -5,10 +5,11 @@ import LoginScreen from "./components/LoginScreen";
 import UserScreen from "./components/UserScreen";
 import GuestScreen from "./components/GuestScreen";
 import SearchScreen from "./components/SearchScreen";
+import ClonesScreen from "./components/ClonesScreen";
 import "./App.css";
 
 function App() {
-  const [mode, setMode] = useState("start");
+  const [mode, setMode] = useState("start"); // start | login | user | guest | search | clones
   const [searchMode, setSearchMode] = useState("user");
   const auth = useAuth();
 
@@ -41,6 +42,12 @@ function App() {
     setMode("search");
   };
 
+  const handleClonesClick = (fromMode) => {
+    setSearchMode(fromMode);
+    setMode("clones");
+  };
+
+  // Renderizar pantallas
   if (mode === "start") {
     return (
       <StartScreen
@@ -69,6 +76,7 @@ function App() {
         user={auth.user} 
         onLogout={handleLogout}
         onSearchClick={() => handleSearchClick("user")}
+        onClonesClick={() => handleClonesClick("user")}
       />
     );
   }
@@ -78,6 +86,7 @@ function App() {
       <GuestScreen 
         onExit={() => setMode("start")}
         onSearchClick={() => handleSearchClick("guest")}
+        onClonesClick={() => handleClonesClick("guest")}
       />
     );
   }
@@ -85,6 +94,15 @@ function App() {
   if (mode === "search") {
     return (
       <SearchScreen 
+        onBack={() => setMode(searchMode)}
+        searchMode={searchMode}
+      />
+    );
+  }
+
+  if (mode === "clones") {
+    return (
+      <ClonesScreen 
         onBack={() => setMode(searchMode)}
         searchMode={searchMode}
       />

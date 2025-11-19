@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Heart, BookOpen, FlaskConical, Copy, Star, Search, Home } from "lucide-react";
 
-const GuestScreen = ({ onExit, onSearchClick }) => {
+const GuestScreen = ({ onExit, onSearchClick, onClonesClick }) => {
   const [toast, setToast] = useState("");
 
   const containerStyle = {
@@ -61,7 +61,7 @@ const GuestScreen = ({ onExit, onSearchClick }) => {
       icon: <Copy />, 
       label: "CLONES/INSPIRACIONES",
       disabled: false,
-      action: () => showToast("🔍 Funcionalidad de clones en desarrollo")
+      action: onClonesClick
     },
     { 
       icon: <Star />, 

@@ -1,7 +1,7 @@
 import React from "react";
 import { Heart, BookOpen, FlaskConical, Copy, Star, Search, Home } from "lucide-react";
 
-const UserScreen = ({ user, onLogout, onSearchClick }) => {
+const UserScreen = ({ user, onLogout, onSearchClick, onClonesClick }) => {
   const containerStyle = {
     minHeight: '100vh',
     display: 'flex',
@@ -42,7 +42,11 @@ const UserScreen = ({ user, onLogout, onSearchClick }) => {
     { icon: <Heart />, label: "WISHLIST" },
     { icon: <BookOpen />, label: "MI COLECCIÓN" },
     { icon: <FlaskConical />, label: "PERFUMES" },
-    { icon: <Copy />, label: "CLONES/INSPIRACIONES" },
+    { 
+      icon: <Copy />, 
+      label: "CLONES/INSPIRACIONES",
+      action: onClonesClick
+    },
     { icon: <Star />, label: "CELEBRITIES" },
     { 
       icon: <Search />, 
@@ -65,7 +69,7 @@ const UserScreen = ({ user, onLogout, onSearchClick }) => {
           <div className="header-left">
             <h1 className="logo">ESSENCE</h1>
             <span className="user-mode-label">
-              {user?.name || "Usuario"} {user?.lastname || ""}
+              [USER: {user?.name || "Usuario"} {user?.lastname || ""}]
             </span>
           </div>
           <button className="exit-btn" onClick={onLogout}>
