@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, ArrowLeft, Search, X } from 'lucide-react';
 import { useClones } from '../hooks/useClones';
 import { useAuth } from '../hooks/useAuth';
@@ -17,6 +17,68 @@ const ClonesScreen = ({ onBack, searchMode }) => {
   } = useClones();
 
   const auth = useAuth();
+
+  // Calcular el porcentaje para el gradiente
+  const calculateProgress = () => {
+    const min = 50;
+    const max = 95;
+    return ((similarityThreshold - min) / (max - min)) * 100;
+  };
+
+  const progress = calculateProgress();
+
+  // Aplicar estilos al input range dinámicamente
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .custom-range {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 8px;
+        border-radius: 4px;
+        outline: none;
+        background: linear-gradient(to right, #ffc400ff ${progress}%, #ffffff ${progress}%);
+      }
+      .custom-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #000000ff;
+        border: 2px solid #ffc400ff;
+        cursor: pointer;
+        box-shadow: 0 0 5px rgba(0,0,0,0.3);
+      }
+      .custom-range::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #000000ff;
+        border: 2px solid #ffc400ff;
+        cursor: pointer;
+        box-shadow: 0 0 5px rgba(0,0,0,0.3);
+      }
+      .custom-range::-webkit-slider-track {
+        width: 100%;
+        height: 8px;
+        border-radius: 4px;
+        background: linear-gradient(to right, #ffc400ff ${progress}%, #ffffff ${progress}%);
+      }
+      .custom-range::-moz-range-track {
+        width: 100%;
+        height: 8px;
+        border-radius: 4px;
+        background: linear-gradient(to right, #ffc400ff ${progress}%, #ffffff ${progress}%);
+        border: none;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, [progress]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -140,7 +202,7 @@ const ClonesScreen = ({ onBack, searchMode }) => {
                 left: '0.8rem', 
                 top: '50%', 
                 transform: 'translateY(-50%)',
-                color: '#F3E5AB'
+                color: '#ffc400ff'
               }} />
               {searchQuery && (
                 <button
@@ -164,8 +226,8 @@ const ClonesScreen = ({ onBack, searchMode }) => {
 
             {/* Filtro de similitud */}
             <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(113, 54, 0, 0.8)', borderRadius: '0.8rem', border: '1px solid #F3E5AB' }}>
-              <label style={{ color: '#F3E5AB', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
-                Porcentaje mínimo de similitud: <strong>{similarityThreshold}%</strong>
+              <label style={{ color: '#ffffffff', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
+                Porcentaje mínimo de similitud: <strong>{similarityThreshold}</strong>
               </label>
               <input
                 type="range"
@@ -174,12 +236,12 @@ const ClonesScreen = ({ onBack, searchMode }) => {
                 step="5"
                 value={similarityThreshold}
                 onChange={(e) => setSimilarityThreshold(parseInt(e.target.value))}
-                style={{ width: '100%' }}
+                className="custom-range"
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#F3E5AB', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                <span>50%</span>
-                <span>70 %</span>
-                <span>95 º/º</span>
+                <span>50</span>
+                <span>70</span>
+                <span>95</span>
               </div> 
             </div>
 
@@ -245,7 +307,7 @@ const ClonesScreen = ({ onBack, searchMode }) => {
                           fontSize: '0.8rem',
                           fontWeight: 'bold'
                         }}>
-                          {perfume.similitud || '0%'} de similitud
+                          {perfume.similitud || '0'} de similitud
                         </span>
                       </div>
                       
@@ -300,7 +362,7 @@ const ClonesScreen = ({ onBack, searchMode }) => {
             {!loading && clonesResults.length === 0 && selectedPerfume && (
               <div className="card" style={{ textAlign: 'center' }}>
                 <p style={{ color: '#F3E5AB' }}>
-                  No se encontraron clones o inspiraciones con {similarityThreshold}% de similitud
+                  No se encontraron clones o inspiraciones con {similarityThreshold} de similitud
                 </p>
                 <button className="link" onClick={handleClear}>
                   Nueva búsqueda

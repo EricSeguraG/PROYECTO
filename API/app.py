@@ -250,7 +250,7 @@ def get_similares_nombre():
     similares = similares.head(top_n)
 
     similares_out = filtrar_campos(similares).copy()
-    similares_out['similitud'] = (similares['score_similaridad'] * 100).round(1).astype(str) + "%"
+    similares_out['similitud'] = (similares['score_similaridad'] * 100).round(1).astype(str)
 
     # LIMPIAR para JSON válido
     base_limpio = limpiar_para_json(filtrar_campos(df.iloc[[idx_base]]).iloc[0].to_dict())

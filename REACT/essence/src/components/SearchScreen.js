@@ -215,7 +215,15 @@ const SearchScreen = ({ onBack, searchMode }) => {
                   value={filters.genero}
                   onChange={(e) => setFilters({...filters, genero: e.target.value})}
                   className="input"
-                  style={{ fontSize: '0.85rem', padding: '0.4rem 0.6rem', width: '100%' }}
+                  style={{ 
+                    fontSize: '0.85rem', 
+                    padding: '0.4rem 0.6rem', 
+                    width: '100%',
+                    color: '#000000',
+                    backgroundColor: '#F3E5AB',
+                    border: '1px solid #713600',
+                    borderRadius: '4px'
+                  }}
                 >
                   <option value="">Todos</option>
                   <option value="Masculino">Masculino</option>
