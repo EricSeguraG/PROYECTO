@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { useSearch } from '../hooks/useSearch';
 import { useAuth } from '../hooks/useAuth';
 
@@ -13,46 +13,47 @@ const SearchScreen = ({ onBack, searchMode }) => {
     acorde: '',
     perfumista: ''
   });
-  const [selectedPerfume, setSelectedPerfume] = useState(null);
   
   const { 
     searchResults, 
     loading, 
     error, 
     searchPerfumes, 
-    searchSimilar,
     clearResults 
   } = useSearch();
 
   const auth = useAuth();
 
-  // Cargar algunos perfumes al inicio
-  useEffect(() => {
-    if (!filters.perfume && !filters.marca && !filters.genero) {
-      searchPerfumes('', {});
-    }
-  }, []);
-
   const handleSearch = (e) => {
     e?.preventDefault();
-    // Combinar la búsqueda principal con los filtros
-    const searchParams = {
-      ...filters,
-      perfume: searchQuery || filters.perfume // Priorizar la búsqueda principal
-    };
-    searchPerfumes(searchQuery, searchParams);
+    
+    console.log('🎯 Iniciando búsqueda...');
+    console.log('📝 Query:', searchQuery);
+    console.log('🔧 Filtros:', filters);
+    
+    // Crear objeto de filtros combinando búsqueda principal y filtros
+    const searchFilters = { ...filters };
+    
+    // Si hay búsqueda en el input principal, usarla como filtro de perfume
+    if (searchQuery.trim()) {
+      searchFilters.perfume = searchQuery;
+    }
+    
+    // Llamar a la función de búsqueda
+    searchPerfumes(searchQuery, searchFilters);
   };
 
   const handleClear = () => {
     setSearchQuery('');
-    setFilters({ perfume: '', marca: '', genero: '', nota: '', acorde: '', perfumista: '' });
+    setFilters({
+      perfume: '',
+      marca: '',
+      genero: '',
+      nota: '',
+      acorde: '',
+      perfumista: ''
+    });
     clearResults();
-    setSelectedPerfume(null);
-  };
-
-  const handleFindSimilar = async (perfumeName) => {
-    await searchSimilar(perfumeName);
-    setSelectedPerfume(perfumeName);
   };
 
   const handleViewDetails = (perfume) => {
@@ -276,21 +277,41 @@ const SearchScreen = ({ onBack, searchMode }) => {
               </div>
             </div>
 
-            {/* Botón Buscar centrado */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+            {/* Botones Buscar y Limpiar */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              gap: '1rem',
+              marginBottom: '1rem' 
+            }}>
               <button 
                 type="button" 
                 className="btn" 
                 onClick={handleSearch}
                 disabled={loading}
                 style={{ 
-                  width: '200px',
+                  width: '140px',
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center'
                 }}
               >
                 {loading ? 'Buscando...' : 'Buscar'}
+              </button>
+              
+              <button 
+                type="button" 
+                className="btn" 
+                onClick={handleClear}
+                disabled={loading}
+                style={{ 
+                  width: '140px',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                Limpiar
               </button>
             </div>
 
@@ -324,11 +345,6 @@ const SearchScreen = ({ onBack, searchMode }) => {
             {error && (
               <p style={{ color: '#ff4444', textAlign: 'center', marginBottom: '1rem', fontSize: '0.9rem' }}>
                 ❌ Error: {error}
-              </p>
-            )}
-            {selectedPerfume && (
-              <p style={{ color: '#F3E5AB', textAlign: 'center', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                Mostrando perfumes similares a: <strong>{selectedPerfume}</strong>
               </p>
             )}
           </div>
@@ -393,7 +409,7 @@ const SearchScreen = ({ onBack, searchMode }) => {
                         </div>
                       )}
 
-                      {/* Botones de acción */}
+                      {/* Botón de acción - Solo Ver Detalles */}
                       <div style={{ 
                         display: 'flex', 
                         gap: '0.5rem', 
@@ -411,19 +427,6 @@ const SearchScreen = ({ onBack, searchMode }) => {
                           onClick={() => handleViewDetails(perfume)}
                         >
                           Ver Detalles
-                        </button>
-                        <button 
-                          className="btn"
-                          style={{ 
-                            padding: '0.3rem 0.6rem', 
-                            fontSize: '0.8rem',
-                            background: 'rgba(243, 229, 171, 0.9)',
-                            color: '#713600'
-                          }}
-                          onClick={() => handleFindSimilar(perfume.perfume)}
-                        >
-                          <Sparkles size={14} style={{ marginRight: '0.3rem' }} />
-                          Similares
                         </button>
                       </div>
                     </div>

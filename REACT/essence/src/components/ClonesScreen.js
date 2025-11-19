@@ -37,7 +37,7 @@ const ClonesScreen = ({ onBack, searchMode }) => {
         height: 8px;
         border-radius: 4px;
         outline: none;
-        background: linear-gradient(to right, #ffc400ff ${progress}%, #ffffff ${progress}%);
+        background: linear-gradient(to right, #ff9900ff ${progress}%, #ffffff ${progress}%);
       }
       .custom-range::-webkit-slider-thumb {
         -webkit-appearance: none;
@@ -45,32 +45,10 @@ const ClonesScreen = ({ onBack, searchMode }) => {
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: #000000ff;
-        border: 2px solid #ffc400ff;
+        background: #ff9900ff;
+        border: 2px solid #000000ff;
         cursor: pointer;
         box-shadow: 0 0 5px rgba(0,0,0,0.3);
-      }
-      .custom-range::-moz-range-thumb {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: #000000ff;
-        border: 2px solid #ffc400ff;
-        cursor: pointer;
-        box-shadow: 0 0 5px rgba(0,0,0,0.3);
-      }
-      .custom-range::-webkit-slider-track {
-        width: 100%;
-        height: 8px;
-        border-radius: 4px;
-        background: linear-gradient(to right, #ffc400ff ${progress}%, #ffffff ${progress}%);
-      }
-      .custom-range::-moz-range-track {
-        width: 100%;
-        height: 8px;
-        border-radius: 4px;
-        background: linear-gradient(to right, #ffc400ff ${progress}%, #ffffff ${progress}%);
-        border: none;
       }
     `;
     document.head.appendChild(style);
@@ -202,7 +180,7 @@ const ClonesScreen = ({ onBack, searchMode }) => {
                 left: '0.8rem', 
                 top: '50%', 
                 transform: 'translateY(-50%)',
-                color: '#ffc400ff'
+                color: '#ff9900ff'
               }} />
               {searchQuery && (
                 <button

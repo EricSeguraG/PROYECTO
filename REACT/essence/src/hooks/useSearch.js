@@ -1,23 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react'; // Quita useEffect
 import { perfumeAPI } from '../services/api';
 
 export const useSearch = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [searchType, setSearchType] = useState('general'); // general, clones, celebrities
+  const [searchType, setSearchType] = useState('general');
+
+  // Quita el useEffect que carga perfumes iniciales
 
   const searchPerfumes = async (query, filters = {}) => {
-    if (!query.trim()) {
+    // Si no hay criterios de búsqueda, mantener array vacío
+    if (!query.trim() && 
+        !filters.perfume && 
+        !filters.marca && 
+        !filters.genero && 
+        !filters.nota && 
+        !filters.acorde && 
+        !filters.perfumista) {
       setSearchResults([]);
       return;
     }
 
     setLoading(true);
     setError(null);
+    setSearchType('general');
     
     try {
+      console.log('🔍 Ejecutando búsqueda con:', { query, filters });
       const results = await perfumeAPI.searchPerfumes(query, filters);
+      setSearchResults(results);
+    } catch (err) {
+      setError(err.message);
+      setSearchResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ... el resto de las funciones se mantienen igual
+  const searchSimilar = async (perfumeName) => {
+    setLoading(true);
+    setError(null);
+    setSearchType('general');
+    
+    try {
+      console.log('🔍 Buscando similares para:', perfumeName);
+      const results = await perfumeAPI.searchSimilar(perfumeName);
       setSearchResults(results);
     } catch (err) {
       setError(err.message);
@@ -71,6 +100,7 @@ export const useSearch = () => {
     error,
     searchType,
     searchPerfumes,
+    searchSimilar,
     searchClones,
     searchByCelebrity,
     clearResults
