@@ -1,7 +1,8 @@
+// src/components/UserScreen.js
 import React from "react";
 import { Heart, BookOpen, FlaskConical, Copy, Star, Search, Home } from "lucide-react";
 
-const UserScreen = ({ user, onLogout, onSearchClick, onClonesClick }) => {
+const UserScreen = ({ user, onLogout, onSearchClick, onClonesClick, onCelebrityClick, onPerfumesClick }) => {
   const containerStyle = {
     minHeight: '100vh',
     display: 'flex',
@@ -41,13 +42,21 @@ const UserScreen = ({ user, onLogout, onSearchClick, onClonesClick }) => {
   const menuItems = [
     { icon: <Heart />, label: "WISHLIST" },
     { icon: <BookOpen />, label: "MI COLECCIÓN" },
-    { icon: <FlaskConical />, label: "PERFUMES" },
+    { 
+      icon: <FlaskConical />, 
+      label: "PERFUMES",
+      action: onPerfumesClick
+    },
     { 
       icon: <Copy />, 
       label: "CLONES/INSPIRACIONES",
       action: onClonesClick
     },
-    { icon: <Star />, label: "CELEBRITIES" },
+    { 
+      icon: <Star />, 
+      label: "CELEBRITIES",
+      action: onCelebrityClick
+    },
     { 
       icon: <Search />, 
       label: "MULTIBUSCADOR",
@@ -82,7 +91,7 @@ const UserScreen = ({ user, onLogout, onSearchClick, onClonesClick }) => {
             <button 
               key={i} 
               className="menu-btn" 
-              onClick={item.action || (() => {})}
+              onClick={item.action || (() => console.log("Función en desarrollo"))}
             >
               {item.icon}
               {item.label}

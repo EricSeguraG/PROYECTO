@@ -1,3 +1,4 @@
+// src/App.js
 import React, { useState, useEffect } from "react";
 import { useAuth } from "./hooks/useAuth";
 import StartScreen from "./components/StartScreen";
@@ -6,11 +7,15 @@ import UserScreen from "./components/UserScreen";
 import GuestScreen from "./components/GuestScreen";
 import SearchScreen from "./components/SearchScreen";
 import ClonesScreen from "./components/ClonesScreen";
+import CelebrityScreen from "./components/CelebrityScreen";
+import BrandsScreen from "./components/BrandsScreen";
+import PerfumesByBrandScreen from "./components/PerfumesByBrandScreen";
 import "./App.css";
 
 function App() {
-  const [mode, setMode] = useState("start"); // start | login | user | guest | search | clones
+  const [mode, setMode] = useState("start"); // start | login | user | guest | search | clones | celebrity | brands | perfumes-by-brand
   const [searchMode, setSearchMode] = useState("user");
+  const [selectedBrand, setSelectedBrand] = useState("");
   const auth = useAuth();
 
   useEffect(() => {
@@ -24,7 +29,7 @@ function App() {
         localStorage.removeItem("sessionUser");
       }
     }
-  }, [auth]);
+  }, []); 
 
   const handleAuthSuccess = () => {
     if (auth.handleAuth()) {
@@ -47,7 +52,27 @@ function App() {
     setMode("clones");
   };
 
-  // Renderizar pantallas
+  const handleCelebrityClick = (fromMode) => {
+    setSearchMode(fromMode);
+    setMode("celebrity");
+  };
+
+  const handleBrandsClick = (fromMode) => {
+    setSearchMode(fromMode);
+    setMode("brands");
+  };
+
+  const handleBrandSelect = (brandName) => {
+    setSelectedBrand(brandName);
+    setMode("perfumes-by-brand");
+  };
+
+  const handleBackFromPerfumes = () => {
+    setMode("brands");
+  };
+
+  // --- RENDERIZADO DE PANTALLAS ---
+
   if (mode === "start") {
     return (
       <StartScreen
@@ -77,6 +102,8 @@ function App() {
         onLogout={handleLogout}
         onSearchClick={() => handleSearchClick("user")}
         onClonesClick={() => handleClonesClick("user")}
+        onCelebrityClick={() => handleCelebrityClick("user")}
+        onPerfumesClick={() => handleBrandsClick("user")}
       />
     );
   }
@@ -87,6 +114,8 @@ function App() {
         onExit={() => setMode("start")}
         onSearchClick={() => handleSearchClick("guest")}
         onClonesClick={() => handleClonesClick("guest")}
+        onCelebrityClick={() => handleCelebrityClick("guest")}
+        onPerfumesClick={() => handleBrandsClick("guest")}
       />
     );
   }
@@ -104,6 +133,35 @@ function App() {
     return (
       <ClonesScreen 
         onBack={() => setMode(searchMode)}
+        searchMode={searchMode}
+      />
+    );
+  }
+
+  if (mode === "celebrity") {
+    return (
+      <CelebrityScreen 
+        onBack={() => setMode(searchMode)}
+        searchMode={searchMode}
+      />
+    );
+  }
+
+  if (mode === "brands") {
+    return (
+      <BrandsScreen 
+        onBack={() => setMode(searchMode)}
+        onBrandSelect={handleBrandSelect}
+        searchMode={searchMode}
+      />
+    );
+  }
+
+  if (mode === "perfumes-by-brand") {
+    return (
+      <PerfumesByBrandScreen 
+        onBack={handleBackFromPerfumes}
+        brandName={selectedBrand}
         searchMode={searchMode}
       />
     );

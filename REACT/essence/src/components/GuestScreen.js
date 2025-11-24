@@ -1,7 +1,8 @@
+// src/components/GuestScreen.js
 import React, { useState } from "react";
 import { Heart, BookOpen, FlaskConical, Copy, Star, Search, Home } from "lucide-react";
 
-const GuestScreen = ({ onExit, onSearchClick, onClonesClick }) => {
+const GuestScreen = ({ onExit, onSearchClick, onClonesClick, onCelebrityClick, onPerfumesClick }) => {
   const [toast, setToast] = useState("");
 
   const containerStyle = {
@@ -40,6 +41,11 @@ const GuestScreen = ({ onExit, onSearchClick, onClonesClick }) => {
     flexDirection: 'column'
   };
 
+  const showToast = (text) => {
+    setToast(text);
+    setTimeout(() => setToast(""), 2500);
+  };
+
   const menuItems = [
     { 
       icon: <Heart />, 
@@ -55,7 +61,7 @@ const GuestScreen = ({ onExit, onSearchClick, onClonesClick }) => {
       icon: <FlaskConical />, 
       label: "PERFUMES",
       disabled: false,
-      action: () => showToast("🔍 Funcionalidad de perfumes en desarrollo")
+      action: onPerfumesClick
     },
     { 
       icon: <Copy />, 
@@ -67,7 +73,7 @@ const GuestScreen = ({ onExit, onSearchClick, onClonesClick }) => {
       icon: <Star />, 
       label: "CELEBRITIES",
       disabled: false,
-      action: () => showToast("🔍 Funcionalidad de celebrities en desarrollo")
+      action: onCelebrityClick
     },
     { 
       icon: <Search />, 
@@ -76,11 +82,6 @@ const GuestScreen = ({ onExit, onSearchClick, onClonesClick }) => {
       action: onSearchClick
     },
   ];
-
-  const showToast = (text) => {
-    setToast(text);
-    setTimeout(() => setToast(""), 2500);
-  };
 
   return (
     <div style={containerStyle}>

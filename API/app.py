@@ -32,11 +32,359 @@ def limpiar_para_json(obj):
 
 
 # --------------------------------------------------
+# Función para reemplazar guiones por espacios en respuestas
+# --------------------------------------------------
+def reemplazar_guiones_respuesta(obj):
+    """Reemplaza guiones por espacios en strings solo para mostrar en frontend"""
+    if isinstance(obj, dict):
+        return {k: reemplazar_guiones_respuesta(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [reemplazar_guiones_respuesta(v) for v in obj]
+    elif isinstance(obj, str):
+        return obj.replace("-", " ")
+    else:
+        return obj
+
+
+# --------------------------------------------------
+# Diccionarios de traducción
+# --------------------------------------------------
+TRADUCCION_NOTAS = {
+    # Notas comunes
+    'amber': 'ámbar',
+    'woody': 'madera',
+    'citrus': 'cítrico',
+    'floral': 'floral',
+    'fresh': 'fresco',
+    'spicy': 'especiado',
+    'aromatic': 'aromático',
+    'green': 'verde',
+    'fruity': 'frutal',
+    'gourmand': 'gourmand',
+    'leather': 'cuero',
+    'chypre': 'chypre',
+    'oriental': 'oriental',
+    'powdery': 'polvoso',
+    'musky': 'almizclado',
+    'aquatic': 'acuático',
+    'herbal': 'herbal',
+    'white-floral': 'flor blanco',
+    'rose': 'rosa',
+    'jasmine': 'jazmín',
+    'vanilla': 'vainilla',
+    'patchouli': 'pachulí',
+    'sandalwood': 'sándalo',
+    'cedar': 'cedro',
+    'bergamot': 'bergamota',
+    'lemon': 'limón',
+    'orange': 'naranja',
+    'mandarin': 'mandarina',
+    'grapefruit': 'pomelo',
+    'neroli': 'neroli',
+    'ylang-ylang': 'ylang-ylang',
+    'tuberose': 'tuberosa',
+    'lily': 'lirio',
+    'violet': 'violeta',
+    'iris': 'iris',
+    'lavender': 'lavanda',
+    'pepper': 'pimienta',
+    'cinnamon': 'canela',
+    'clove': 'clavo',
+    'ginger': 'jengibre',
+    'nutmeg': 'nuez moscada',
+    'cardamom': 'cardamomo',
+    'incense': 'incienso',
+    'oud': 'oud',
+    'tonka-bean': 'haba tonka',
+    'benzoin': 'benjuí',
+    'labdanum': 'ládano',
+    'oakmoss': 'musgo de roble',
+    'vetiver': 'vetiver',
+    'mossy': 'musgoso',
+    'earthy': 'terroso',
+    'smoky': 'ahumado',
+    'balsamic': 'balsámico',
+    'honey': 'miel',
+    'coffee': 'café',
+    'chocolate': 'chocolate',
+    'caramel': 'caramelo',
+    'almond': 'almendra',
+    'coconut': 'coco',
+    'apple': 'manzana',
+    'pear': 'pera',
+    'peach': 'durazno',
+    'berry': 'baya',
+    'blackberry': 'mora',
+    'raspberry': 'frambuesa',
+    'strawberry': 'fresa',
+    'cherry': 'cereza',
+    'plum': 'ciruela',
+    'fig': 'higo',
+    'melon': 'melón',
+    'pineapple': 'piña',
+    'mango': 'mango',
+    'litchi': 'litchi',
+    'ozonic': 'ozónico',
+    'marine': 'marino',
+    'mineral': 'mineral',
+    'metallic': 'metálico',
+    'animalic': 'animal',
+    'civet': 'civeta',
+    'castoreum': 'castóreo',
+    'fresh-spicy': 'especiado fresco',
+    'woody-aromatic': 'aromático maderoso',
+    'floral-fruity': 'floral frutal',
+    'citrus-aromatic': 'aromático cítrico'
+}
+
+TRADUCCION_ACORDES = {
+    'woody': 'madera',
+    'amber': 'ámbar',
+    'aromatic': 'aromático',
+    'citrus': 'cítrico',
+    'floral': 'floral',
+    'fresh': 'fresco',
+    'spicy': 'especiado',
+    'green': 'verde',
+    'fruity': 'frutal',
+    'gourmand': 'gourmand',
+    'leather': 'cuero',
+    'chypre': 'chypre',
+    'oriental': 'oriental',
+    'powdery': 'polvoso',
+    'musky': 'almizclado',
+    'aquatic': 'acuático',
+    'herbal': 'herbal',
+    'white-floral': 'flor blanco',
+    'rose': 'rosa',
+    'fougere': 'fougère',
+    'aldehydic': 'aldehídico',
+    'animalic': 'animal',
+    'balsamic': 'balsámico',
+    'earthy': 'terroso',
+    'smoky': 'ahumado'
+}
+
+TRADUCCION_GENEROS = {
+    'for-men': 'para hombre',
+    'for-women': 'para mujer',
+    'unisex': 'unisex',
+    'for-her': 'para mujer',
+    'for-him': 'para hombre',
+    'masculine': 'masculino',
+    'feminine': 'femenino',
+    'men': 'hombre',
+    'women': 'mujer'
+}
+
+# --------------------------------------------------
+# Diccionarios de traducción inversa (castellano -> inglés)
+# --------------------------------------------------
+TRADUCCION_INVERSA_NOTAS = {v: k for k, v in TRADUCCION_NOTAS.items()}
+TRADUCCION_INVERSA_ACORDES = {v: k for k, v in TRADUCCION_ACORDES.items()}
+TRADUCCION_INVERSA_GENEROS = {v: k for k, v in TRADUCCION_GENEROS.items()}
+
+
+# --------------------------------------------------
+# Funciones de traducción
+# --------------------------------------------------
+def traducir_texto(texto, diccionario):
+    """Traduce un texto usando el diccionario proporcionado"""
+    if not texto or not isinstance(texto, str):
+        return texto
+
+    texto_lower = texto.lower().strip()
+
+    # Buscar traducción exacta
+    if texto_lower in diccionario:
+        return diccionario[texto_lower]
+
+    # Buscar traducción parcial (para textos compuestos)
+    palabras = texto_lower.split()
+    traducido = []
+    for palabra in palabras:
+        if palabra in diccionario:
+            traducido.append(diccionario[palabra])
+        else:
+            traducido.append(palabra)
+
+    return ' '.join(traducido)
+
+
+def traducir_texto_inverso(texto, diccionario):
+    """Traduce de castellano a inglés usando el diccionario inverso"""
+    if not texto or not isinstance(texto, str):
+        return texto
+
+    texto_lower = texto.lower().strip()
+
+    # Buscar traducción exacta
+    if texto_lower in diccionario:
+        return diccionario[texto_lower]
+
+    # Buscar traducción parcial (para textos compuestos)
+    palabras = texto_lower.split()
+    traducido = []
+    for palabra in palabras:
+        if palabra in diccionario:
+            traducido.append(diccionario[palabra])
+        else:
+            traducido.append(palabra)
+
+    return ' '.join(traducido)
+
+
+def traducir_lista(lista, diccionario):
+    """Traduce una lista de textos"""
+    if not isinstance(lista, list):
+        return lista
+
+    return [traducir_texto(str(item), diccionario) for item in lista if item]
+
+
+def traducir_lista_inversa(lista, diccionario):
+    """Traduce una lista de textos de castellano a inglés"""
+    if not isinstance(lista, list):
+        return lista
+
+    return [traducir_texto_inverso(str(item), diccionario) for item in lista if item]
+
+
+def traducir_perfume(perfume):
+    """Aplica traducciones a todos los campos relevantes de un perfume"""
+    perfume_traducido = perfume.copy()
+
+    # Traducir género
+    if 'genero' in perfume_traducido and perfume_traducido['genero']:
+        perfume_traducido['genero'] = traducir_texto(
+            str(perfume_traducido['genero']),
+            TRADUCCION_GENEROS
+        )
+
+    # Traducir notas (salida, corazón, base)
+    for campo_nota in ['salida', 'corazon', 'base']:
+        if campo_nota in perfume_traducido and perfume_traducido[campo_nota]:
+            # Si es una lista, traducir cada elemento
+            if isinstance(perfume_traducido[campo_nota], list):
+                perfume_traducido[campo_nota] = traducir_lista(
+                    perfume_traducido[campo_nota],
+                    TRADUCCION_NOTAS
+                )
+            # Si es string, traducir el texto completo
+            elif isinstance(perfume_traducido[campo_nota], str):
+                # Para strings, primero separar por comas y luego traducir
+                notas_lista = [n.strip() for n in str(perfume_traducido[campo_nota]).split(',')]
+                notas_traducidas = traducir_lista(notas_lista, TRADUCCION_NOTAS)
+                perfume_traducido[campo_nota] = ', '.join(notas_traducidas)
+
+    # Traducir acordes principales
+    if 'main_accords' in perfume_traducido and perfume_traducido['main_accords']:
+        perfume_traducido['main_accords'] = traducir_lista(
+            perfume_traducido['main_accords'],
+            TRADUCCION_ACORDES
+        )
+
+    return perfume_traducido
+
+
+# --------------------------------------------------
+# Función para preparar respuesta final (MODIFICADA)
+# --------------------------------------------------
+def preparar_respuesta(obj):
+    """Aplica limpiezas, reemplazo de guiones y traducciones"""
+    obj_limpio = limpiar_para_json(obj)
+    obj_con_espacios = reemplazar_guiones_respuesta(obj_limpio)
+
+    # Si es un perfume individual, traducirlo
+    if isinstance(obj_con_espacios, dict):
+        return traducir_perfume(obj_con_espacios)
+    # Si es una lista de perfumes, traducir cada uno
+    elif isinstance(obj_con_espacios, list) and obj_con_espacios and isinstance(obj_con_espacios[0], dict):
+        return [traducir_perfume(perfume) for perfume in obj_con_espacios]
+
+    return obj_con_espacios
+
+
+# --------------------------------------------------
+# Función para traducir parámetros de búsqueda
+# --------------------------------------------------
+def traducir_parametros_busqueda(notas_param=None, acordes_param=None, genero_param=None):
+    """Traduce los parámetros de búsqueda de castellano a inglés"""
+    parametros_traducidos = {}
+
+    # Traducir notas
+    if notas_param:
+        notas_castellano = [n.strip().lower() for n in notas_param.split(",") if n.strip()]
+        notas_ingles = []
+        for nota in notas_castellano:
+            # Primero intentar traducción inversa directa
+            if nota in TRADUCCION_INVERSA_NOTAS:
+                notas_ingles.append(TRADUCCION_INVERSA_NOTAS[nota])
+            else:
+                # Si no encuentra, buscar en los valores del diccionario
+                encontrado = False
+                for key_eng, value_esp in TRADUCCION_NOTAS.items():
+                    if value_esp.lower() == nota:
+                        notas_ingles.append(key_eng)
+                        encontrado = True
+                        break
+                # Si no se encuentra, usar el original (por si ya está en inglés)
+                if not encontrado:
+                    notas_ingles.append(nota)
+
+        parametros_traducidos['notas'] = notas_ingles
+        print(f"🔍 Notas traducidas: {notas_castellano} -> {notas_ingles}")
+
+    # Traducir acordes
+    if acordes_param:
+        acordes_castellano = [a.strip().lower() for a in acordes_param.split(",") if a.strip()]
+        acordes_ingles = []
+        for acorde in acordes_castellano:
+            # Primero intentar traducción inversa directa
+            if acorde in TRADUCCION_INVERSA_ACORDES:
+                acordes_ingles.append(TRADUCCION_INVERSA_ACORDES[acorde])
+            else:
+                # Si no encuentra, buscar en los valores del diccionario
+                encontrado = False
+                for key_eng, value_esp in TRADUCCION_ACORDES.items():
+                    if value_esp.lower() == acorde:
+                        acordes_ingles.append(key_eng)
+                        encontrado = True
+                        break
+                # Si no se encuentra, usar el original (por si ya está en inglés)
+                if not encontrado:
+                    acordes_ingles.append(acorde)
+
+        parametros_traducidos['acordes'] = acordes_ingles
+        print(f"🔍 Acordes traducidos: {acordes_castellano} -> {acordes_ingles}")
+
+    # Traducir género
+    if genero_param:
+        genero_castellano = genero_param.lower().strip()
+        if genero_castellano in TRADUCCION_INVERSA_GENEROS:
+            parametros_traducidos['genero'] = TRADUCCION_INVERSA_GENEROS[genero_castellano]
+            print(f"🔍 Género traducido: {genero_castellano} -> {parametros_traducidos['genero']}")
+        else:
+            # Buscar en los valores
+            for key_eng, value_esp in TRADUCCION_GENEROS.items():
+                if value_esp.lower() == genero_castellano:
+                    parametros_traducidos['genero'] = key_eng
+                    print(f"🔍 Género traducido: {genero_castellano} -> {key_eng}")
+                    break
+            # Si no se encuentra, usar el original
+            if 'genero' not in parametros_traducidos:
+                parametros_traducidos['genero'] = genero_param
+
+    return parametros_traducidos
+
+
+# --------------------------------------------------
 # Función para cargar el CSV
 # --------------------------------------------------
 def cargar_csv():
     archivo = "fra_perfumes.csv"
     if not os.path.exists(archivo):
+        print(f"Advertencia: {archivo} no encontrado. Asegúrate de tener el archivo.")
         raise FileNotFoundError(f"El archivo {archivo} no se encuentra en el directorio actual")
 
     configuraciones = [
@@ -61,7 +409,7 @@ def cargar_csv():
 
 
 # --------------------------------------------------
-# Cargar el DataFrame
+# Cargar el DataFrame (SIN modificar guiones)
 # --------------------------------------------------
 try:
     df = cargar_csv()
@@ -69,7 +417,7 @@ try:
     print(f"Dimensiones del DataFrame: {df.shape}")
 except Exception as e:
     print(f"Error crítico al cargar el CSV: {e}")
-    exit(1)
+    df = pd.DataFrame(columns=['url', 'perfume', 'marca', 'genero', 'año', 'salida', 'corazon', 'base', 'main_accords'])
 
 # Crear columna combinada de main_accords
 main_cols = [c for c in df.columns if c.lower().startswith("mainaccord")]
@@ -107,21 +455,23 @@ def extraer_notas(row):
     return list(set(notas))
 
 
-df['todas_notas'] = df.apply(extraer_notas, axis=1)
-
-# Vocabulario global
-VOCAB = sorted({n for notas in df['todas_notas'] for n in notas})
-
-
-def vectorizar_notas(notas, vocab):
-    return [1 if n in notas else 0 for n in vocab]
+# Solo ejecutar esto si el df tiene datos
+if not df.empty:
+    df['todas_notas'] = df.apply(extraer_notas, axis=1)
+    VOCAB = sorted({n for notas in df['todas_notas'] for n in notas})
 
 
-MATRIZ_VECTORES = np.array([vectorizar_notas(notas, VOCAB) for notas in df['todas_notas']])
+    def vectorizar_notas(notas, vocab):
+        return [1 if n in notas else 0 for n in vocab]
+
+
+    MATRIZ_VECTORES = np.array([vectorizar_notas(notas, VOCAB) for notas in df['todas_notas']])
+else:
+    MATRIZ_VECTORES = np.array([])
 
 
 # --------------------------------------------------
-# Endpoints CORREGIDOS
+# Endpoints MODIFICADOS - Ahora con traducción de parámetros de búsqueda
 # --------------------------------------------------
 @app.route('/perfumes', methods=['GET'])
 def get_perfumes():
@@ -138,8 +488,8 @@ def get_perfumes():
         subset = df.iloc[inicio:fin]
         perfumes = filtrar_campos(subset).to_dict(orient='records')
 
-        # LIMPIAR para JSON válido
-        perfumes_limpios = [limpiar_para_json(perfume) for perfume in perfumes]
+        # Aplicar reemplazo de guiones por espacios y traducciones
+        perfumes_limpios = [preparar_respuesta(perfume) for perfume in perfumes]
 
         return jsonify({
             'pagina': pagina,
@@ -156,7 +506,7 @@ def get_perfume(perfume_id):
     if perfume_id < 0 or perfume_id >= len(df):
         abort(404, description=f"Perfume ID {perfume_id} no encontrado. El rango válido es 0-{len(df) - 1}")
     perfume = filtrar_campos(df.iloc[[perfume_id]]).iloc[0].to_dict()
-    perfume_limpio = limpiar_para_json(perfume)
+    perfume_limpio = preparar_respuesta(perfume)
     return jsonify(perfume_limpio)
 
 
@@ -172,19 +522,40 @@ def search_perfumes():
             'año': 'año'
         }
 
-        # --- Filtros básicos ---
+        # --- TRADUCIR PARÁMETROS DE BÚSQUEDA ---
+        notas_param = request.args.get('nota')
+        acordes_param = request.args.get('acorde')
+        genero_param = request.args.get('genero')
+
+        parametros_traducidos = traducir_parametros_busqueda(notas_param, acordes_param, genero_param)
+
+        # --- Filtros básicos CONVIRTIENDO ESPACIOS A GUIONES PARA BÚSQUEDA ---
         for param, columna in filtros_texto.items():
             valor = request.args.get(param)
             if valor and columna in query.columns:
-                if columna == 'genero':
-                    query = query[query[columna].astype(str).str.lower() == valor.lower()]
+                # Para marcas y perfumes, convertir espacios a guiones para buscar en la base de datos
+                if columna in ['marca', 'perfume']:
+                    # Crear versión con guiones (como está en la base de datos)
+                    valor_con_guiones = valor.replace(" ", "-")
+                    print(f"🔍 Buscando {columna}: '{valor}' -> '{valor_con_guiones}'")
+                    # Buscar por la versión con guiones usando contains para nombres de perfume
+                    if columna == 'marca':
+                        query = query[query[columna].astype(str).str.lower() == valor_con_guiones.lower()]
+                    else:  # Para perfume, usar contains para búsqueda parcial
+                        query = query[query[columna].astype(str).str.contains(valor_con_guiones, case=False, na=False)]
+                elif columna == 'genero':
+                    # Usar el género traducido si está disponible
+                    genero_buscar = parametros_traducidos.get('genero', valor)
+                    query = query[query[columna].astype(str).str.lower() == genero_buscar.lower()]
                 else:
                     query = query[query[columna].astype(str).str.contains(valor, case=False, na=False)]
 
-        # --- Buscar por notas ---
-        notas_param = request.args.get('nota')
-        if notas_param:
-            notas_buscar = [n.strip().lower() for n in notas_param.split(",") if n.strip()]
+        # --- Buscar por notas (USANDO TÉRMINOS TRADUCIDOS) ---
+        if 'notas' in parametros_traducidos:
+            notas_buscar = parametros_traducidos['notas']
+            # Convertir espacios a guiones para coincidir con la base de datos
+            notas_buscar = [n.strip().lower().replace(" ", "-") for n in notas_buscar]
+            print(f"🔍 Buscando notas (traducidas): {notas_buscar}")
 
             def contiene_todas(row):
                 notas_perfume = extraer_notas(row)
@@ -192,10 +563,12 @@ def search_perfumes():
 
             query = query[query.apply(contiene_todas, axis=1)]
 
-        # --- Buscar por acordes ---
-        acordes_param = request.args.get('acorde')
-        if acordes_param and 'main_accords' in query.columns:
-            acordes_buscar = [a.strip().lower() for a in acordes_param.split(",") if a.strip()]
+        # --- Buscar por acordes (USANDO TÉRMINOS TRADUCIDOS) ---
+        if 'acordes' in parametros_traducidos and 'main_accords' in query.columns:
+            acordes_buscar = parametros_traducidos['acordes']
+            # Convertir espacios a guiones para coincidir con la base de datos
+            acordes_buscar = [a.strip().lower().replace(" ", "-") for a in acordes_buscar]
+            print(f"🔍 Buscando acordes (traducidos): {acordes_buscar}")
 
             def contiene_todos_acordes(acordes):
                 acordes_lower = [str(a).lower() for a in acordes]
@@ -210,7 +583,7 @@ def search_perfumes():
             query = query.sort_values(by=orden, ascending=ascendente)
 
         resultados = filtrar_campos(query).to_dict(orient='records')
-        resultados_limpios = [limpiar_para_json(resultado) for resultado in resultados]
+        resultados_limpios = [preparar_respuesta(resultado) for resultado in resultados]
 
         return jsonify({
             'total_resultados': len(resultados_limpios),
@@ -222,6 +595,7 @@ def search_perfumes():
                 'perfume': request.args.get('perfume'),
                 'año': request.args.get('año')
             },
+            'parametros_traducidos': parametros_traducidos,
             'resultados': resultados_limpios
         })
 
@@ -235,7 +609,11 @@ def get_similares_nombre():
     if not nombre:
         abort(400, description="Debes proporcionar el parámetro 'nombre'")
 
-    coincidencias = df[df['perfume'].astype(str).str.contains(nombre, case=False, na=False)]
+    # CONVERTIR ESPACIOS A GUIONES PARA BÚSQUEDA
+    nombre_con_guiones = nombre.replace(" ", "-")
+    print(f"🔍 Buscando similares para: '{nombre}' -> '{nombre_con_guiones}'")
+
+    coincidencias = df[df['perfume'].astype(str).str.contains(nombre_con_guiones, case=False, na=False)]
     if coincidencias.empty:
         abort(404, description=f"No se encontró ningún perfume que coincida con '{nombre}'")
 
@@ -252,14 +630,198 @@ def get_similares_nombre():
     similares_out = filtrar_campos(similares).copy()
     similares_out['similitud'] = (similares['score_similaridad'] * 100).round(1).astype(str)
 
-    # LIMPIAR para JSON válido
-    base_limpio = limpiar_para_json(filtrar_campos(df.iloc[[idx_base]]).iloc[0].to_dict())
-    similares_limpios = [limpiar_para_json(perfume) for perfume in similares_out.to_dict(orient='records')]
+    base_limpio = preparar_respuesta(filtrar_campos(df.iloc[[idx_base]]).iloc[0].to_dict())
+    similares_limpios = [preparar_respuesta(perfume) for perfume in similares_out.to_dict(orient='records')]
 
     return jsonify({
+        'termino_buscado': nombre,
         'base': base_limpio,
         'similares': similares_limpios
     })
+
+
+# --------------------------------------------------
+# Endpoint: Obtener todas las marcas únicas
+# --------------------------------------------------
+@app.route('/perfumes/marcas', methods=['GET'])
+def get_marcas():
+    try:
+        # Obtener todas las marcas únicas, ordenadas alfabéticamente
+        marcas = df['marca'].dropna().unique()
+        marcas = [marca for marca in marcas if str(marca).strip() != '']
+
+        # Aplicar reemplazo de guiones por espacios en la respuesta
+        marcas_con_espacios = [marca.replace("-", " ") if isinstance(marca, str) else marca for marca in marcas]
+        marcas_ordenadas = sorted(marcas_con_espacios, key=lambda x: str(x).lower())
+
+        return jsonify({
+            'total_marcas': len(marcas_ordenadas),
+            'marcas': marcas_ordenadas
+        })
+    except Exception as e:
+        abort(500, description=f"Error al obtener las marcas: {str(e)}")
+
+
+# --------------------------------------------------
+# Endpoint: Obtener perfumes por marca
+# --------------------------------------------------
+@app.route('/perfumes/marca/<string:nombre_marca>', methods=['GET'])
+def get_perfumes_por_marca(nombre_marca):
+    try:
+        # CONVERTIR ESPACIOS A GUIONES PARA BÚSQUEDA
+        nombre_marca_con_guiones = nombre_marca.replace(" ", "-")
+        print(f"🔍 Buscando perfumes por marca: '{nombre_marca}' -> '{nombre_marca_con_guiones}'")
+
+        pagina = int(request.args.get('pagina', 1))
+        por_pagina = int(request.args.get('por_pagina', 20))
+
+        if pagina < 1 or por_pagina < 1:
+            abort(400, description="Los parámetros de paginación deben ser positivos")
+
+        # Filtrar por marca usando la versión con guiones (como está en la base de datos)
+        perfumes_marca = df[df['marca'].astype(str).str.lower() == nombre_marca_con_guiones.lower()]
+
+        if perfumes_marca.empty:
+            print(f"⚠️ No se encontraron perfumes para la marca: '{nombre_marca_con_guiones}'")
+            return jsonify({
+                'marca_solicitada': nombre_marca,
+                'marca_buscada': nombre_marca_con_guiones,
+                'total_perfumes': 0,
+                'pagina': pagina,
+                'por_pagina': por_pagina,
+                'perfumes': []
+            })
+
+        # Paginación
+        inicio = (pagina - 1) * por_pagina
+        fin = inicio + por_pagina
+        subset = perfumes_marca.iloc[inicio:fin]
+
+        perfumes = filtrar_campos(subset).to_dict(orient='records')
+        perfumes_limpios = [preparar_respuesta(perfume) for perfume in perfumes]
+
+        print(f"✅ Encontrados {len(perfumes_marca)} perfumes para '{nombre_marca_con_guiones}'")
+
+        return jsonify({
+            'marca_solicitada': nombre_marca,
+            'marca_encontrada': nombre_marca_con_guiones,
+            'total_perfumes': len(perfumes_marca),
+            'pagina': pagina,
+            'por_pagina': por_pagina,
+            'perfumes': perfumes_limpios
+        })
+    except ValueError:
+        abort(400, description="Parámetros de paginación inválidos")
+    except Exception as e:
+        abort(500, description=f"Error al obtener perfumes de la marca: {str(e)}")
+
+
+# --------------------------------------------------
+# Endpoint para obtener traducciones disponibles
+# --------------------------------------------------
+@app.route('/perfumes/traducciones', methods=['GET'])
+def get_traducciones():
+    """Endpoint para obtener todos los diccionarios de traducción"""
+    return jsonify({
+        'generos': TRADUCCION_GENEROS,
+        'notas': TRADUCCION_NOTAS,
+        'acordes': TRADUCCION_ACORDES,
+        'traducciones_inversas': {
+            'notas': TRADUCCION_INVERSA_NOTAS,
+            'acordes': TRADUCCION_INVERSA_ACORDES,
+            'generos': TRADUCCION_INVERSA_GENEROS
+        }
+    })
+
+
+# --------------------------------------------------
+# Endpoint de diagnóstico para ver marcas disponibles
+# --------------------------------------------------
+@app.route('/perfumes/debug/marcas', methods=['GET'])
+def debug_marcas():
+    """Endpoint para diagnosticar qué marcas están disponibles"""
+    try:
+        # Obtener todas las marcas únicas
+        marcas = df['marca'].dropna().unique()
+        marcas = [marca for marca in marcas if str(marca).strip() != '']
+
+        # Separar marcas con guiones y sin guiones
+        marcas_con_guiones = [m for m in marcas if '-' in str(m)]
+        marcas_sin_guiones = [m for m in marcas if '-' not in str(m)]
+
+        # Crear mapeo de marcas con guiones a sus versiones con espacios
+        mapeo_marcas = {marca: marca.replace("-", " ") for marca in marcas_con_guiones}
+
+        return jsonify({
+            'total_marcas': len(marcas),
+            'marcas_con_guiones': marcas_con_guiones,
+            'marcas_sin_guiones': marcas_sin_guiones,
+            'mapeo_guiones_a_espacios': mapeo_marcas,
+            'ejemplos_busqueda': [
+                {
+                    'marca_con_espacios': 'Yves Saint Laurent',
+                    'marca_con_guiones': 'Yves-Saint-Laurent',
+                    'url_ejemplo': '/perfumes/marca/Yves Saint Laurent'
+                },
+                {
+                    'marca_con_espacios': 'Jean Paul Gaultier',
+                    'marca_con_guiones': 'Jean-Paul-Gaultier',
+                    'url_ejemplo': '/perfumes/marca/Jean Paul Gaultier'
+                }
+            ]
+        })
+    except Exception as e:
+        abort(500, description=f"Error en diagnóstico: {str(e)}")
+
+
+# --------------------------------------------------
+# Endpoint de diagnóstico para ver notas y acordes disponibles
+# --------------------------------------------------
+@app.route('/perfumes/debug/notas-acordes', methods=['GET'])
+def debug_notas_acordes():
+    """Endpoint para diagnosticar qué notas y acordes están disponibles"""
+    try:
+        # Obtener todas las notas únicas
+        todas_notas = []
+        for notas in df['todas_notas']:
+            todas_notas.extend(notas)
+
+        notas_unicas = sorted(list(set(todas_notas)))
+
+        # Separar notas con guiones y sin guiones
+        notas_con_guiones = [n for n in notas_unicas if '-' in str(n)]
+        notas_sin_guiones = [n for n in notas_unicas if '-' not in str(n)]
+
+        # Crear mapeo de notas con guiones a sus versiones con espacios
+        mapeo_notas = {nota: notas.replace("-", " ") for notas in notas_con_guiones}
+
+        # Obtener acordes únicos
+        todos_acordes = []
+        for acordes in df['main_accords']:
+            if isinstance(acordes, list):
+                todos_acordes.extend([str(a) for a in acordes])
+
+        acordes_unicos = sorted(list(set(todos_acordes)))
+
+        # Separar acordes con guiones y sin guiones
+        acordes_con_guiones = [a for a in acordes_unicos if '-' in str(a)]
+        acordes_sin_guiones = [a for a in acordes_unicos if '-' not in str(a)]
+
+        # Crear mapeo de acordes con guiones a sus versiones con espacios
+        mapeo_acordes = {acorde: acorde.replace("-", " ") for acorde in acordes_con_guiones}
+
+        return jsonify({
+            'total_notas': len(notas_unicas),
+            'notas_con_guiones': notas_con_guiones,
+            'notas_sin_guiones': notas_sin_guiones,
+            'mapeo_notas_guiones_a_espacios': mapeo_notas,
+            'total_acordes': len(acordes_unicos),
+            'acordes_con_guiones': acordes_con_guiones,
+            'acordes_sin_guiones': acordes_sin_guiones,
+            'mapeo_acordes_guiones_a_espacios': mapeo_acordes
+        })
+    except Exception as e:
+        abort(500, description=f"Error en diagnóstico: {str(e)}")
 
 
 # --------------------------------------------------
