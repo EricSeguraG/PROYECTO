@@ -14,6 +14,29 @@ CORS(app)
 
 
 # --------------------------------------------------
+# Función para obtener la ruta absoluta del archivo CSV
+# --------------------------------------------------
+def obtener_ruta_csv():
+    """Obtiene la ruta absoluta del archivo CSV independientemente del directorio de trabajo"""
+    # Obtener el directorio donde está este script
+    directorio_actual = os.path.dirname(os.path.abspath(__file__))
+    
+    # Primero intentar en el directorio actual del script
+    ruta_csv = os.path.join(directorio_actual, 'fra_perfumes.csv')
+    if os.path.exists(ruta_csv):
+        return ruta_csv
+    
+    # Si no está, intentar en el directorio padre
+    directorio_padre = os.path.dirname(directorio_actual)
+    ruta_csv = os.path.join(directorio_padre, 'fra_perfumes.csv')
+    if os.path.exists(ruta_csv):
+        return ruta_csv
+    
+    # Si no está en ninguno de los lugares esperados, devolver la ruta del directorio actual
+    return os.path.join(directorio_actual, 'fra_perfumes.csv')
+
+
+# --------------------------------------------------
 # Función para limpiar valores NaN/None antes de convertir a JSON
 # --------------------------------------------------
 def limpiar_para_json(obj):
@@ -379,13 +402,17 @@ def traducir_parametros_busqueda(notas_param=None, acordes_param=None, genero_pa
 
 
 # --------------------------------------------------
-# Función para cargar el CSV
+# Función para cargar el CSV (MODIFICADA)
 # --------------------------------------------------
 def cargar_csv():
-    archivo = "fra_perfumes.csv"
+    archivo = obtener_ruta_csv()
+    print(f"📁 Intentando cargar CSV desde: {archivo}")
+    
     if not os.path.exists(archivo):
-        print(f"Advertencia: {archivo} no encontrado. Asegúrate de tener el archivo.")
-        raise FileNotFoundError(f"El archivo {archivo} no se encuentra en el directorio actual")
+        print(f"❌ Error: {archivo} no encontrado.")
+        print(f"📂 Directorio actual: {os.getcwd()}")
+        print(f"📂 Archivos en directorio actual: {os.listdir('.')}")
+        raise FileNotFoundError(f"El archivo {archivo} no se encuentra")
 
     configuraciones = [
         {"sep": ";", "encoding": "latin1"},
@@ -397,12 +424,16 @@ def cargar_csv():
 
     for i, config in enumerate(configuraciones):
         try:
+            print(f"🔧 Intentando configuración {i + 1}: {config}")
             df = pd.read_csv(archivo, **config)
             # Limpiar NaN/None del DataFrame inmediatamente
             df = df.fillna("")
+            print(f"✅ CSV cargado exitosamente con configuración {i + 1}")
+            print(f"📊 Dimensiones del DataFrame: {df.shape}")
+            print(f"📋 Columnas: {list(df.columns)}")
             return df
         except Exception as e:
-            print(f"Intento {i + 1} fallido: {e}")
+            print(f"❌ Intento {i + 1} fallido: {e}")
             continue
 
     raise Exception("No se pudo cargar el CSV con ninguna configuración probada")
@@ -413,10 +444,10 @@ def cargar_csv():
 # --------------------------------------------------
 try:
     df = cargar_csv()
-    print("CSV cargado exitosamente")
-    print(f"Dimensiones del DataFrame: {df.shape}")
+    print("🎉 CSV cargado exitosamente")
+    print(f"📊 Dimensiones del DataFrame: {df.shape}")
 except Exception as e:
-    print(f"Error crítico al cargar el CSV: {e}")
+    print(f"❌ Error crítico al cargar el CSV: {e}")
     df = pd.DataFrame(columns=['url', 'perfume', 'marca', 'genero', 'año', 'salida', 'corazon', 'base', 'main_accords'])
 
 # Crear columna combinada de main_accords
@@ -435,7 +466,7 @@ CAMPOS_VALIDOS = [
     'corazon', 'base', 'perfumista', 'perfumista 2', 'main_accords'
 ]
 CAMPOS_DISPONIBLES = [campo for campo in CAMPOS_VALIDOS if campo in df.columns]
-print("Columnas disponibles en la API:", CAMPOS_DISPONIBLES)
+print("📋 Columnas disponibles en la API:", CAMPOS_DISPONIBLES)
 
 
 # --------------------------------------------------
@@ -568,7 +599,7 @@ def search_perfumes():
             acordes_buscar = parametros_traducidos['acordes']
             # Convertir espacios a guiones para coincidir con la base de datos
             acordes_buscar = [a.strip().lower().replace(" ", "-") for a in acordes_buscar]
-            print(f"🔍 Buscando acordes (traducidos): {acordes_buscar}")
+            print(f"🔍 Buscando acordes (traducidas): {acordes_buscar}")
 
             def contiene_todos_acordes(acordes):
                 acordes_lower = [str(a).lower() for a in acordes]
@@ -843,7 +874,35 @@ def error_interno(error):
 
 
 # --------------------------------------------------
+# Endpoint de información del sistema
+# --------------------------------------------------
+@app.route('/system/info', methods=['GET'])
+def system_info():
+    """Endpoint para obtener información del sistema y rutas"""
+    return jsonify({
+        'directorio_actual': os.getcwd(),
+        'directorio_script': os.path.dirname(os.path.abspath(__file__)),
+        'ruta_csv_intentada': obtener_ruta_csv(),
+        'existe_csv': os.path.exists(obtener_ruta_csv()),
+        'archivos_en_directorio': os.listdir('.'),
+        'dimensiones_dataframe': df.shape if not df.empty else 'Vacío',
+        'columnas_dataframe': list(df.columns) if not df.empty else []
+    })
+
+
+# --------------------------------------------------
 # Main
 # --------------------------------------------------
 if __name__ == '__main__':
+    print("🚀 Iniciando servidor Flask...")
+    print(f"📂 Directorio actual: {os.getcwd()}")
+    print(f"📂 Directorio del script: {os.path.dirname(os.path.abspath(__file__))}")
+    print(f"📁 Ruta del CSV: {obtener_ruta_csv()}")
+    print(f"✅ CSV existe: {os.path.exists(obtener_ruta_csv())}")
+    
+    if not df.empty:
+        print(f"📊 DataFrame cargado: {df.shape[0]} filas, {df.shape[1]} columnas")
+    else:
+        print("⚠️ DataFrame vacío - funcionando en modo limitado")
+    
     app.run(debug=True, host='0.0.0.0', port=5000)
