@@ -29,7 +29,13 @@ const fetchWithHyphenReplacement = async (url, options = {}) => {
     
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+      // Intentamos parsear el error si es JSON
+      try {
+          const errorJson = JSON.parse(errorText);
+          throw new Error(errorJson.error || `Error ${response.status}: ${response.statusText}`);
+      } catch (e) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
     }
     
     const data = await response.json();
@@ -42,7 +48,7 @@ const fetchWithHyphenReplacement = async (url, options = {}) => {
   }
 };
 
-// Función para cargar la base de datos de celebrities
+// Función para cargar la base de datos de celebrities (Local)
 const loadCelebritiesDB = async () => {
   try {
     console.log('📁 Cargando base de datos de celebrities...');
@@ -63,6 +69,63 @@ const loadCelebritiesDB = async () => {
 };
 
 export const perfumeAPI = {
+
+  // ==========================================
+  //  NUEVAS FUNCIONES DE USUARIO (BACKEND)
+  // ==========================================
+
+  // --- REGISTRO DE USUARIO ---
+  register: async (userData) => {
+    try {
+      console.log('👤 Registrando usuario:', userData.username);
+      const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Error en el registro');
+      }
+      
+      console.log('✅ Usuario registrado con éxito');
+      return data;
+    } catch (error) {
+      console.error('❌ Error en register:', error);
+      throw error;
+    }
+  },
+
+  // --- LOGIN DE USUARIO ---
+  login: async (credentials) => {
+    try {
+      console.log('🔑 Iniciando sesión:', credentials.username);
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Error en el inicio de sesión');
+      }
+
+      console.log('✅ Login exitoso');
+      return data;
+    } catch (error) {
+      console.error('❌ Error en login:', error);
+      throw error;
+    }
+  },
+
+  // ==========================================
+  //  FUNCIONES EXISTENTES DE PERFUMES
+  // ==========================================
+
   // --- BÚSQUEDA DE CLONES ---
   searchClones: async (perfumeName, similarityThreshold = 70) => {
     try {

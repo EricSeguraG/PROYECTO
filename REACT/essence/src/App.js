@@ -1,6 +1,8 @@
 // src/App.js
 import React, { useState, useEffect } from "react";
 import { useAuth } from "./hooks/useAuth";
+
+// Componentes
 import StartScreen from "./components/StartScreen";
 import LoginScreen from "./components/LoginScreen";
 import UserScreen from "./components/UserScreen";
@@ -13,35 +15,30 @@ import PerfumesByBrandScreen from "./components/PerfumesByBrandScreen";
 import "./App.css";
 
 function App() {
+  // Estados de navegación
   const [mode, setMode] = useState("start"); // start | login | user | guest | search | clones | celebrity | brands | perfumes-by-brand
   const [searchMode, setSearchMode] = useState("user");
   const [selectedBrand, setSelectedBrand] = useState("");
+  
+  // Hook de autenticación (Aquí vive la conexión con el Backend)
   const auth = useAuth();
 
+  // --- EFECTO MÁGICO PARA REDIRECCIONAR ---
+  // Este efecto vigila si 'auth.user' cambia. 
+  // Si el usuario se loguea correctamente (backend responde), nos manda a 'user'.
   useEffect(() => {
-    const storedUser = localStorage.getItem("sessionUser");
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        auth.setUser(userData);
-      } catch (error) {
-        console.error("Error parsing stored user:", error);
-        localStorage.removeItem("sessionUser");
-      }
-    }
-  }, []); 
-
-  const handleAuthSuccess = () => {
-    if (auth.handleAuth()) {
+    if (auth.user) {
       setMode("user");
     }
-  };
+  }, [auth.user]);
 
+  // Logout: Limpia usuario y vuelve al inicio
   const handleLogout = () => {
     auth.handleLogout();
     setMode("start");
   };
 
+  // Funciones de navegación del menú
   const handleSearchClick = (fromMode) => {
     setSearchMode(fromMode);
     setMode("search");
@@ -76,7 +73,14 @@ function App() {
   if (mode === "start") {
     return (
       <StartScreen
-        onUserClick={() => setMode("login")}
+        onUserClick={() => {
+          // Si ya hay sesión guardada, entra directo, si no, va a login
+          if (auth.user) {
+            setMode("user");
+          } else {
+            setMode("login");
+          }
+        }}
         onGuestClick={() => setMode("guest")}
       />
     );
@@ -85,8 +89,9 @@ function App() {
   if (mode === "login") {
     return (
       <LoginScreen
+        // Pasamos todas las props del hook useAuth (username, password, errores, etc.)
         {...auth}
-        handleAuth={handleAuthSuccess}
+        // Navegación
         onBack={() => {
           setMode("start");
           auth.resetForm();
