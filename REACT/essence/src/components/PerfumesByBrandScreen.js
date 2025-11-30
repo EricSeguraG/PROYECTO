@@ -3,11 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { perfumeAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import PerfumeDetailModal from './PerfumeDetailModal'; // <--- 1. Importamos el Modal
 
 const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
   const [perfumes, setPerfumes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // 2. Estado para el Modal
+  const [selectedPerfume, setSelectedPerfume] = useState(null);
   
   const auth = useAuth();
 
@@ -29,10 +33,12 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
     }
   };
 
+  // 3. Modificamos esta función para abrir el Modal en vez del alert
   const handleViewDetails = (perfume) => {
-    alert(`Detalles de ${perfume.perfume}\nMarca: ${perfume.marca}\nGénero: ${perfume.genero}\nAño: ${perfume.año || 'N/A'}`);
+    setSelectedPerfume(perfume);
   };
 
+  // --- ESTILOS VISUALES ORIGINALES (Intactos) ---
   const containerStyle = {
     minHeight: '100vh',
     display: 'flex',
@@ -207,7 +213,7 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
                     textAlign: 'center',
                     lineHeight: '1.3'
                   }}>
-                    {perfume.perfume}
+                    {perfume.perfume || perfume.nombre}
                   </h3>
                   
                   {/* Información básica en grid */}
@@ -251,7 +257,7 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
                       }}
                       onClick={() => handleViewDetails(perfume)}
                     >
-                      Ver Detalles
+                      Ver Detalles y Comentar
                     </button>
                   </div>
                 </div>
@@ -278,6 +284,15 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
           </div>
         </div>
       </div>
+
+      {/* 4. AÑADIDO: El Modal de Comentarios */}
+      {selectedPerfume && (
+        <PerfumeDetailModal 
+          perfume={selectedPerfume}
+          user={auth.user} 
+          onClose={() => setSelectedPerfume(null)}
+        />
+      )}
     </div>
   );
 };

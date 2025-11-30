@@ -1,318 +1,153 @@
 // src/services/api.js
-const API_BASE_URL = 'http://localhost:5000';
 
-// Función para reemplazar guiones por espacios en cualquier dato (solo para visualización)
+// 🟢 NODE.JS (Usuarios y Comentarios - MySQL)
+const NODE_API = 'http://localhost:3001';
+
+// 🔵 PYTHON FLASK (Perfumes, Buscador y Clones - CSV)
+const FLASK_API = 'http://localhost:5000';
+
+// Función para limpiar guiones visualmente
 const replaceHyphensInData = (data) => {
-  if (typeof data === 'string') {
-    return data.replace(/-/g, ' ');
-  }
-  
-  if (Array.isArray(data)) {
-    return data.map(item => replaceHyphensInData(item));
-  }
-  
+  if (typeof data === 'string') return data.replace(/-/g, ' ');
+  if (Array.isArray(data)) return data.map(item => replaceHyphensInData(item));
   if (typeof data === 'object' && data !== null) {
     const newObj = {};
-    for (const key in data) {
-      newObj[key] = replaceHyphensInData(data[key]);
-    }
+    for (const key in data) newObj[key] = replaceHyphensInData(data[key]);
     return newObj;
   }
-  
   return data;
 };
 
-// Función wrapper para fetch que aplica el reemplazo de guiones SOLO para visualización
-const fetchWithHyphenReplacement = async (url, options = {}) => {
+// --- 🟡 FUNCIÓN PARA CARGAR CELEBRITIES (LOCAL) ---
+const loadCelebritiesDB = async () => {
   try {
-    const response = await fetch(url, options);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      // Intentamos parsear el error si es JSON
-      try {
-          const errorJson = JSON.parse(errorText);
-          throw new Error(errorJson.error || `Error ${response.status}: ${response.statusText}`);
-      } catch (e) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-    }
-    
-    const data = await response.json();
-    const transformedData = replaceHyphensInData(data);
-    
-    return transformedData;
+    // Intenta cargar el archivo local que tenías antes
+    const module = await import('../data/celebritiesDB.js');
+    const db = module.default || module.celebritiesDB;
+    return replaceHyphensInData(db || []);
   } catch (error) {
-    console.error('❌ Error en fetch:', error);
-    throw error;
+    console.error("⚠️ No se encontró celebritiesDB.js en src/data/", error);
+    return [];
   }
 };
 
-// Función para cargar la base de datos de celebrities (Local)
-const loadCelebritiesDB = async () => {
+// Wrapper para llamadas a PYTHON
+const fetchPython = async (endpoint) => {
   try {
-    console.log('📁 Cargando base de datos de celebrities...');
-    
-    const module = await import('../data/celebritiesDB.js');
-    const celebritiesData = module.default || module.celebritiesDB;
-    
-    if (celebritiesData && Array.isArray(celebritiesData)) {
-      console.log(`✅ Base de datos cargada: ${celebritiesData.length} celebridades`);
-      return replaceHyphensInData(celebritiesData);
-    } else {
-      throw new Error('Formato inválido');
-    }
+    const response = await fetch(`${FLASK_API}${endpoint}`);
+    if (!response.ok) throw new Error(`Error Python API: ${response.statusText}`);
+    const data = await response.json();
+    return replaceHyphensInData(data);
   } catch (error) {
-    console.error('❌ Error cargando celebritiesDB.js:', error);
-    return [];
+    console.error('❌ Error fetching Python:', error);
+    return []; 
   }
+};
+
+// Wrapper para llamadas a NODE.JS
+const fetchNode = async (endpoint, method = 'GET', body = null) => {
+  const options = {
+    method,
+    headers: { 'Content-Type': 'application/json' }
+  };
+  if (body) options.body = JSON.stringify(body);
+
+  const response = await fetch(`${NODE_API}${endpoint}`, options);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Error en Node API');
+  return data;
 };
 
 export const perfumeAPI = {
 
   // ==========================================
-  //  NUEVAS FUNCIONES DE USUARIO (BACKEND)
+  //  🟢 USUARIOS Y COMENTARIOS (NODE - MySQL)
   // ==========================================
 
-  // --- REGISTRO DE USUARIO ---
   register: async (userData) => {
-    try {
-      console.log('👤 Registrando usuario:', userData.username);
-      const response = await fetch(`${API_BASE_URL}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Error en el registro');
-      }
-      
-      console.log('✅ Usuario registrado con éxito');
-      return data;
-    } catch (error) {
-      console.error('❌ Error en register:', error);
-      throw error;
-    }
+    return await fetchNode('/register', 'POST', userData);
   },
 
-  // --- LOGIN DE USUARIO ---
   login: async (credentials) => {
-    try {
-      console.log('🔑 Iniciando sesión:', credentials.username);
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials)
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Error en el inicio de sesión');
-      }
-
-      console.log('✅ Login exitoso');
-      return data;
-    } catch (error) {
-      console.error('❌ Error en login:', error);
-      throw error;
-    }
+    return await fetchNode('/login', 'POST', credentials);
   },
 
-  // ==========================================
-  //  FUNCIONES EXISTENTES DE PERFUMES
-  // ==========================================
-
-  // --- BÚSQUEDA DE CLONES ---
-  searchClones: async (perfumeName, similarityThreshold = 70) => {
+  getComments: async (perfumeId) => {
     try {
-      const url = `${API_BASE_URL}/perfumes/similares?nombre=${encodeURIComponent(perfumeName)}`;
-      console.log('🌐 URL de clones:', url);
-      
-      const data = await fetchWithHyphenReplacement(url);
-      console.log('✅ Datos de clones recibidos:', data);
-      
-      if (!data.similares) {
-        console.warn('⚠️ No hay campo "similares" en la respuesta');
-        return [];
-      }
-      
-      // Filtrar por similitud
-      if (similarityThreshold) {
-        const filtered = data.similares.filter(perfume => {
-          const similarityMatch = (perfume.similitud || '0').match(/(\d+(\.\d+)?)/);
-          const similarity = similarityMatch ? parseFloat(similarityMatch[1]) : 0;
-          console.log(`📊 Perfume: ${perfume.perfume}, Similitud: ${similarity}%`);
-          return similarity >= similarityThreshold;
-        });
-        console.log(`🎯 Clones filtrados (≥${similarityThreshold}%):`, filtered.length);
-        return filtered;
-      }
-      
-      return data.similares || [];
+      const response = await fetch(`${NODE_API}/comentarios/${perfumeId}`);
+      if (!response.ok) return [];
+      return await response.json();
     } catch (error) {
-      console.error('❌ Error en searchClones:', error);
-      throw error;
-    }
-  },
-
-  // --- BÚSQUEDA DE SIMILARES ---
-  searchSimilar: async (perfumeName, limit = 10) => {
-    try {
-      const url = `${API_BASE_URL}/perfumes/similares?nombre=${encodeURIComponent(perfumeName)}&n=${limit}`;
-      console.log('🌐 URL de similares:', url);
-      
-      const data = await fetchWithHyphenReplacement(url);
-      console.log('✅ Datos de similares recibidos:', data);
-      return data.similares || [];
-    } catch (error) {
-      console.error('❌ Error en searchSimilar:', error);
-      throw error;
-    }
-  },
-
-  // --- BÚSQUEDA GENERAL DE PERFUMES ---
-  searchPerfumes: async (query, filters = {}) => {
-    try {
-      const params = new URLSearchParams();
-      
-      console.log('🔍 Parámetros de búsqueda recibidos:');
-      console.log('- Query:', query);
-      console.log('- Filtros:', filters);
-      
-      // Agregar parámetros de búsqueda (usar espacios - el backend los convertirá)
-      if (query) {
-        params.append('perfume', query);
-      } else if (filters.perfume) {
-        params.append('perfume', filters.perfume);
-      }
-      
-      if (filters.marca) params.append('marca', filters.marca);
-      if (filters.genero) params.append('genero', filters.genero);
-      if (filters.nota) params.append('nota', filters.nota);
-      if (filters.acorde) params.append('acorde', filters.acorde);
-      if (filters.perfumista) params.append('perfumista', filters.perfumista);
-      
-      const url = `${API_BASE_URL}/perfumes/search?${params}`;
-      console.log('🌐 URL de búsqueda:', url);
-
-      const data = await fetchWithHyphenReplacement(url);
-      console.log('✅ Datos de búsqueda recibidos:', data);
-      console.log('📊 Número de resultados:', data.resultados?.length || 0);
-      
-      return data.resultados || [];
-    } catch (error) {
-      console.error('❌ Error en searchPerfumes:', error);
-      throw error;
-    }
-  },
-
-  // --- BÚSQUEDA POR CELEBRIDAD ---
-  searchByCelebrity: async (celebrityName) => {
-    try {
-      console.log('🌟 Buscando celebridad:', celebrityName);
-      
-      if (!celebrityName || !celebrityName.trim()) {
-        console.log('⚠️ Nombre de celebridad vacío');
-        return [];
-      }
-
-      // Cargar la base de datos
-      const celebritiesDB = await loadCelebritiesDB();
-      
-      if (!celebritiesDB || !Array.isArray(celebritiesDB)) {
-        console.error('❌ Base de datos no disponible');
-        return [];
-      }
-
-      console.log(`📊 Buscando "${celebrityName}" entre ${celebritiesDB.length} celebridades...`);
-
-      // Búsqueda case-insensitive
-      const searchTerm = celebrityName.toLowerCase().trim();
-      const results = celebritiesDB.filter(celebrity => {
-        if (!celebrity || !celebrity.celebrity) return false;
-        return celebrity.celebrity.toLowerCase().includes(searchTerm);
-      });
-
-      console.log('✅ Resultados encontrados:', results.length);
-      
-      if (results.length === 0) {
-        console.log(`🔍 No se encontró "${celebrityName}"`);
-      } else {
-        results.forEach(result => {
-          console.log(`🎯 Encontrado: ${result.celebrity} - ${result.perfumes?.length || 0} perfumes`);
-        });
-      }
-
-      return results;
-
-    } catch (error) {
-      console.error('❌ Error en searchByCelebrity:', error);
       return [];
     }
   },
 
-  // --- OBTENER TODAS LAS MARCAS ---
+  addComment: async (commentData) => {
+    return await fetchNode('/comentarios', 'POST', commentData);
+  },
+
+  // ==========================================
+  //  🔵 PERFUMES Y DATOS (PYTHON - CSV)
+  // ==========================================
+
   getBrands: async () => {
-    try {
-      const url = `${API_BASE_URL}/perfumes/marcas`;
-      console.log('🌐 URL de marcas:', url);
-      
-      const data = await fetchWithHyphenReplacement(url);
-      console.log('✅ Marcas recibidas:', data);
-      return data.marcas || [];
-    } catch (error) {
-      console.error('❌ Error en getBrands:', error);
-      throw error;
-    }
+    const data = await fetchPython('/perfumes/marcas');
+    return data.marcas || [];
   },
 
-  // --- OBTENER PERFUMES POR MARCA ---
-  getPerfumesByBrand: async (brandName, page = 1, perPage = 20) => {
-    try {
-      // Usar el nombre con espacios - el backend lo convertirá a guiones
-      const url = `${API_BASE_URL}/perfumes/marca/${encodeURIComponent(brandName)}?pagina=${page}&por_pagina=${perPage}`;
-      console.log('🌐 URL de perfumes por marca:', url);
-      
-      const data = await fetchWithHyphenReplacement(url);
-      console.log('✅ Perfumes por marca recibidos:', data);
-      return data.perfumes || [];
-    } catch (error) {
-      console.error('❌ Error en getPerfumesByBrand:', error);
-      throw error;
-    }
+  getPerfumesByBrand: async (brandName, page = 1) => {
+    // Usamos encodeURIComponent para que funcione con "Tom Ford" o "Tom-Ford"
+    const data = await fetchPython(`/perfumes/marca/${encodeURIComponent(brandName)}?pagina=${page}`);
+    return data.perfumes || [];
   },
 
-  // --- OBTENER LISTA PAGINADA DE PERFUMES ---
-  getPerfumes: async (page = 1, perPage = 20) => {
-    try {
-      const url = `${API_BASE_URL}/perfumes?pagina=${page}&por_pagina=${perPage}`;
-      console.log('🌐 URL de perfumes:', url);
-      
-      const data = await fetchWithHyphenReplacement(url);
-      console.log('✅ Datos de perfumes recibidos:', data);
-      return data.perfumes || [];
-    } catch (error) {
-      console.error('❌ Error en getPerfumes:', error);
-      throw error;
-    }
+  searchPerfumes: async (query, filters = {}) => {
+    const params = new URLSearchParams();
+    if (query) params.append('perfume', query);
+    if (filters.perfume) params.append('perfume', filters.perfume);
+    if (filters.marca) params.append('marca', filters.marca);
+    if (filters.genero) params.append('genero', filters.genero);
+    if (filters.nota) params.append('nota', filters.nota);
+    if (filters.acorde) params.append('acorde', filters.acorde);
+    if (filters.perfumista) params.append('perfumista', filters.perfumista);
+    
+    const data = await fetchPython(`/perfumes/search?${params}`);
+    return data.resultados || [];
   },
 
-  // --- OBTENER DETALLES DE UN PERFUME ---
+  searchClones: async (perfumeName) => {
+    const data = await fetchPython(`/perfumes/similares?nombre=${encodeURIComponent(perfumeName)}`);
+    return data.similares || [];
+  },
+
+  // ==========================================
+  //  🟡 CELEBRITIES (ARCHIVO LOCAL)
+  // ==========================================
+  
+  searchByCelebrity: async (celebrityName) => {
+    try {
+       // Cargamos la base de datos local
+       const db = await loadCelebritiesDB();
+       
+       if (!celebrityName) return [];
+       const term = celebrityName.toLowerCase().trim();
+       
+       // Filtramos localmente como hacías antes
+       const results = db.filter(c => 
+         c.celebrity && c.celebrity.toLowerCase().includes(term)
+       );
+       
+       return results;
+    } catch (error) {
+       console.error("Error buscando celebrity:", error);
+       return [];
+    }
+  },
+  
+  // Detalle del perfume (Python)
   getPerfumeDetails: async (perfumeId) => {
-    try {
-      const url = `${API_BASE_URL}/perfumes/${perfumeId}`;
-      console.log('🌐 URL de detalles:', url);
-      
-      const data = await fetchWithHyphenReplacement(url);
-      console.log('✅ Datos de detalles recibidos:', data);
-      return data;
-    } catch (error) {
-      console.error('❌ Error en getPerfumeDetails:', error);
-      throw error;
-    }
+     // Si necesitas buscar por ID, Python tendría que tener una ruta para esto.
+     // Si no, puedes confiar en que la info ya viene cargada.
+     return {}; 
   }
 };
