@@ -1,7 +1,9 @@
+// src/components/SearchScreen.js
 import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useSearch } from '../hooks/useSearch';
 import { useAuth } from '../hooks/useAuth';
+import PerfumeDetailModal from './PerfumeDetailModal'; // <--- 1. Importamos el Modal
 
 const SearchScreen = ({ onBack, searchMode }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -13,6 +15,9 @@ const SearchScreen = ({ onBack, searchMode }) => {
     acorde: '',
     perfumista: ''
   });
+  
+  // 2. Estado para el Modal
+  const [selectedPerfume, setSelectedPerfume] = useState(null);
   
   const { 
     searchResults, 
@@ -54,10 +59,12 @@ const SearchScreen = ({ onBack, searchMode }) => {
       perfumista: ''
     });
     clearResults();
+    setSelectedPerfume(null); // 3. Limpiar perfume seleccionado
   };
 
+  // 4. Modificamos esta función para abrir el Modal
   const handleViewDetails = (perfume) => {
-    alert(`Detalles de ${perfume.perfume}\nMarca: ${perfume.marca}\nGénero: ${perfume.genero}\nPerfumista: ${perfume.perfumista || 'N/A'}`);
+    setSelectedPerfume(perfume);
   };
 
   const containerStyle = {
@@ -426,7 +433,7 @@ const SearchScreen = ({ onBack, searchMode }) => {
                           }}
                           onClick={() => handleViewDetails(perfume)}
                         >
-                          Ver Detalles
+                          Ver Detalles y Comentar
                         </button>
                       </div>
                     </div>
@@ -448,6 +455,15 @@ const SearchScreen = ({ onBack, searchMode }) => {
           </div>
         </div>
       </div>
+
+      {/* 5. AÑADIDO: El Modal de Comentarios */}
+      {selectedPerfume && (
+        <PerfumeDetailModal 
+          perfume={selectedPerfume}
+          user={auth.user} 
+          onClose={() => setSelectedPerfume(null)}
+        />
+      )}
     </div>
   );
 };

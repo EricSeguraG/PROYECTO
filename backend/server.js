@@ -12,13 +12,11 @@ app.use(express.json());
 // ==========================================
 //  HELPER: MANEJO DE ESPACIOS Y GUIONES
 // ==========================================
-// Esta función crea variaciones para que "Tom Ford" encuentre "Tom-Ford" y viceversa.
 const getVariations = (text) => {
   if (!text) return [];
   const decoded = decodeURIComponent(text);
   const withSpaces = decoded.replace(/-/g, ' ');
   const withHyphens = decoded.replace(/ /g, '-');
-  // Devolvemos ambas versiones para asegurar que lo encuentre en BD
   return [withSpaces, withHyphens];
 };
 
@@ -89,45 +87,107 @@ app.post('/login', async (req, res) => {
 });
 
 // ==========================================
-//  RUTAS DE COMENTARIOS
+//  RUTAS DE COMENTARIOS (ACTUALIZADAS)
 // ==========================================
 
-// --- OBTENER COMENTARIOS ---
-app.get('/comentarios/:perfumeId', async (req, res) => {
-  const { perfumeId } = req.params;
+// --- OBTENER COMENTARIOS (MÁS ROBUSTA) ---
+app.get('/comentarios/:perfumeIdentifier', async (req, res) => {
+  const { perfumeIdentifier } = req.params;
+  
   try {
-    const query = `
-      SELECT c.*, u.username, u.nombre 
-      FROM comentario c
-      JOIN usuario u ON c.usuario_id = u.id
-      WHERE c.perfume_id = ?
-      ORDER BY c.fecha_creacion DESC
-    `;
-    const [comments] = await db.query(query, [perfumeId]);
+    let query, params;
+    
+    // Si es un número, buscamos por ID de perfume
+    if (!isNaN(perfumeIdentifier)) {
+      query = `
+        SELECT c.id, c.texto, c.puntuacion, c.fecha_creacion,
+               u.id as usuario_id, u.username, u.nombre, u.apellido
+        FROM comentario c
+        JOIN usuario u ON c.usuario_id = u.id
+        WHERE c.perfume_id = ?
+        ORDER BY c.fecha_creacion DESC
+      `;
+      params = [perfumeIdentifier];
+    } else {
+      // Si es texto, buscamos por nombre del perfume
+      const vars = getVariations(perfumeIdentifier);
+      query = `
+        SELECT c.id, c.texto, c.puntuacion, c.fecha_creacion,
+               u.id as usuario_id, u.username, u.nombre, u.apellido
+        FROM comentario c
+        JOIN usuario u ON c.usuario_id = u.id
+        JOIN perfume p ON c.perfume_id = p.id
+        WHERE p.nombre LIKE ? OR p.nombre LIKE ?
+        ORDER BY c.fecha_creacion DESC
+      `;
+      params = [`%${vars[0]}%`, `%${vars[1]}%`];
+    }
+    
+    const [comments] = await db.query(query, params);
     res.json(comments);
   } catch (err) {
-    console.error(err);
+    console.error('Error cargando comentarios:', err);
     res.status(500).json({ error: 'Error al cargar comentarios' });
   }
 });
 
-// --- GUARDAR COMENTARIO ---
+// --- GUARDAR COMENTARIO (ACTUALIZADA) ---
 app.post('/comentarios', async (req, res) => {
-  const { usuario_id, perfume_id, texto, puntuacion } = req.body;
+  const { usuario_id, perfume_id, perfume_name, texto, puntuacion } = req.body;
 
-  if (!usuario_id || !perfume_id || !texto) {
-    return res.status(400).json({ error: 'Faltan datos' });
+  if (!usuario_id || !texto) {
+    return res.status(400).json({ error: 'Faltan datos obligatorios' });
   }
 
   try {
+    let finalPerfumeId = perfume_id;
+    
+    // Si tenemos nombre pero no ID, buscamos el perfume
+    if (perfume_name && !perfume_id) {
+      const vars = getVariations(perfume_name);
+      const [perfumes] = await db.query(
+        'SELECT id FROM perfume WHERE nombre LIKE ? OR nombre LIKE ? LIMIT 1',
+        [`%${vars[0]}%`, `%${vars[1]}%`]
+      );
+      
+      if (perfumes.length > 0) {
+        finalPerfumeId = perfumes[0].id;
+      } else {
+        // Si el perfume no existe en la BD, lo creamos temporalmente
+        const [result] = await db.query(
+          'INSERT INTO perfume (nombre) VALUES (?)',
+          [perfume_name]
+        );
+        finalPerfumeId = result.insertId;
+        console.log(`✅ Perfume temporal creado: ${perfume_name} (ID: ${finalPerfumeId})`);
+      }
+    }
+
+    if (!finalPerfumeId) {
+      return res.status(400).json({ error: 'No se pudo identificar el perfume' });
+    }
+
+    // Verificar si el usuario existe
+    const [users] = await db.query('SELECT id FROM usuario WHERE id = ?', [usuario_id]);
+    if (users.length === 0) {
+      return res.status(400).json({ error: 'Usuario no válido' });
+    }
+
+    // Guardar el comentario
     await db.query(
       'INSERT INTO comentario (usuario_id, perfume_id, texto, puntuacion) VALUES (?, ?, ?, ?)',
-      [usuario_id, perfume_id, texto, puntuacion]
+      [usuario_id, finalPerfumeId, texto, puntuacion || 5]
     );
-    res.json({ message: 'Comentario guardado' });
+    
+    console.log(`✅ Comentario guardado: Usuario ${usuario_id}, Perfume ${finalPerfumeId}`);
+    res.json({ 
+      success: true, 
+      message: 'Comentario guardado exitosamente',
+      perfume_id: finalPerfumeId 
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al guardar comentario' });
+    console.error('❌ Error guardando comentario:', err);
+    res.status(500).json({ error: 'Error al guardar comentario en la base de datos' });
   }
 });
 
@@ -150,7 +210,6 @@ app.get('/perfumes/marcas', async (req, res) => {
 app.get('/perfumes/marca/:nombreMarca', async (req, res) => {
   const { nombreMarca } = req.params;
   
-  // Obtenemos variaciones (con espacio y con guion) para asegurar la búsqueda
   const vars = getVariations(nombreMarca);
   
   console.log(`🔍 Buscando marca: "${vars[0]}" o "${vars[1]}"`);
@@ -214,7 +273,6 @@ app.get('/perfumes/search', async (req, res) => {
     `;
     const params = [];
 
-    // Lógica flexible para cada campo
     if (perfume) {
       const vars = getVariations(perfume);
       sql += " AND (p.nombre LIKE ? OR p.nombre LIKE ?)";
@@ -235,7 +293,6 @@ app.get('/perfumes/search', async (req, res) => {
       sql += " AND (pe.nombre LIKE ? OR pe.nombre LIKE ?)";
       params.push(`%${vars[0]}%`, `%${vars[1]}%`);
     }
-    // Notas en cualquiera de las 3 columnas
     if (nota) {
       const vars = getVariations(nota);
       sql += ` AND (
@@ -251,7 +308,7 @@ app.get('/perfumes/search', async (req, res) => {
       params.push(`%${vars[0]}%`, `%${vars[1]}%`);
     }
     
-    sql += " LIMIT 50"; // Limitar resultados
+    sql += " LIMIT 50";
 
     const [resultados] = await db.query(sql, params);
     res.json({ resultados });
@@ -270,14 +327,12 @@ app.get('/perfumes/similares', async (req, res) => {
   const vars = getVariations(nombre);
 
   try {
-    // 1. Encontrar el original
     const queryId = "SELECT id, marca_id, acordes_principales FROM perfume WHERE nombre LIKE ? OR nombre LIKE ? LIMIT 1";
     const [originals] = await db.query(queryId, [`%${vars[0]}%`, `%${vars[1]}%`]);
 
     if (originals.length === 0) return res.status(404).json({ similares: [] });
     const original = originals[0];
 
-    // 2. Buscar similares por marca o acorde (Aproximación SQL)
     const primerAcorde = original.acordes_principales ? original.acordes_principales.split(',')[0].trim() : '';
     
     let sqlSimilares = `
@@ -300,8 +355,10 @@ app.get('/perfumes/similares', async (req, res) => {
 // ==========================================
 //  ARRANQUE DEL SERVIDOR
 // ==========================================
-// Usamos el puerto 3001 para no chocar con el 5000 (por si acaso usas Python)
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor backend completo corriendo en http://localhost:${PORT}`);
+  console.log(`📝 Rutas de comentarios activas:`);
+  console.log(`   POST /comentarios - Guardar comentarios`);
+  console.log(`   GET  /comentarios/:id - Obtener comentarios por perfume`);
 });

@@ -1,17 +1,22 @@
+// src/components/ClonesScreen.js
 import React, { useState, useEffect } from 'react';
 import { Sparkles, ArrowLeft, Search, X } from 'lucide-react';
 import { useClones } from '../hooks/useClones';
 import { useAuth } from '../hooks/useAuth';
+import PerfumeDetailModal from './PerfumeDetailModal'; // <--- 1. Importamos el Modal
 
 const ClonesScreen = ({ onBack, searchMode }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [similarityThreshold, setSimilarityThreshold] = useState(70);
   
+  // 2. Estado para el Modal
+  const [selectedPerfume, setSelectedPerfume] = useState(null);
+  
   const { 
     clonesResults, 
     loading, 
     error, 
-    selectedPerfume,
+    selectedPerfume: originalPerfume,
     searchClones, 
     clearResults 
   } = useClones();
@@ -66,10 +71,12 @@ const ClonesScreen = ({ onBack, searchMode }) => {
   const handleClear = () => {
     setSearchQuery('');
     clearResults();
+    setSelectedPerfume(null); // 3. Limpiar perfume seleccionado
   };
 
+  // 4. Modificamos esta función para abrir el Modal
   const handleViewDetails = (perfume) => {
-    alert(`Detalles de ${perfume.perfume}\nMarca: ${perfume.marca}\nGénero: ${perfume.genero}\nSimilitud: ${perfume.similitud || 'N/A'}`);
+    setSelectedPerfume(perfume);
   };
 
   const containerStyle = {
@@ -246,9 +253,9 @@ const ClonesScreen = ({ onBack, searchMode }) => {
                 ❌ FAIL
               </p>
             )}
-            {selectedPerfume && (
+            {originalPerfume && (
               <p style={{ color: '#F3E5AB', textAlign: 'center', marginBottom: '1rem' }}>
-                Mostrando clones e inspiraciones de: <strong>{selectedPerfume}</strong>
+                Mostrando clones e inspiraciones de: <strong>{originalPerfume}</strong>
               </p>
             )}
           </div>
@@ -325,10 +332,15 @@ const ClonesScreen = ({ onBack, searchMode }) => {
                       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.8rem', justifyContent: 'flex-end' }}>
                         <button 
                           className="btn"
-                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
+                          style={{ 
+                            padding: '0.3rem 0.6rem', 
+                            fontSize: '0.8rem',
+                            background: 'rgba(243, 229, 171, 0.9)',
+                            color: '#713600'
+                          }}
                           onClick={() => handleViewDetails(perfume)}
                         >
-                          Ver Detalles
+                          Ver Detalles y Comentar
                         </button>
                       </div>
                     </div>
@@ -337,7 +349,7 @@ const ClonesScreen = ({ onBack, searchMode }) => {
               </div>
             )}
 
-            {!loading && clonesResults.length === 0 && selectedPerfume && (
+            {!loading && clonesResults.length === 0 && originalPerfume && (
               <div className="card" style={{ textAlign: 'center' }}>
                 <p style={{ color: '#F3E5AB' }}>
                   No se encontraron clones o inspiraciones con {similarityThreshold} de similitud
@@ -350,6 +362,15 @@ const ClonesScreen = ({ onBack, searchMode }) => {
           </div>
         </div>
       </div>
+
+      {/* 5. AÑADIDO: El Modal de Comentarios */}
+      {selectedPerfume && (
+        <PerfumeDetailModal 
+          perfume={selectedPerfume}
+          user={auth.user} 
+          onClose={() => setSelectedPerfume(null)}
+        />
+      )}
     </div>
   );
 };
