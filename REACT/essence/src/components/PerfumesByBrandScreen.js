@@ -1,6 +1,6 @@
 // src/components/PerfumesByBrandScreen.js
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader, Search } from 'lucide-react';
 import { perfumeAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import PerfumeDetailModal from './PerfumeDetailModal';
@@ -17,6 +17,9 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
   const [itemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMorePages, setIsLoadingMorePages] = useState(false);
+  
+  // Estado para búsqueda de perfumes
+  const [searchQuery, setSearchQuery] = useState('');
   
   const gridRef = useRef(null);
   const auth = useAuth();
@@ -41,6 +44,7 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
       setError(null);
       setAllPerfumes([]);
       setPerfumes([]);
+      setSearchQuery(''); // Resetear búsqueda al cargar nueva marca
       
       console.log(`🔍 Cargando perfumes de: ${brandName}`);
       
@@ -117,15 +121,67 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
     console.log(`🎯 TOTAL cargado: ${sortedPerfumes.length} perfumes en ${total} páginas (ordenados alfabéticamente)`);
   };
 
+  // Filtrar perfumes según búsqueda
+  const getFilteredPerfumes = () => {
+    if (!searchQuery.trim()) {
+      return allPerfumes;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return allPerfumes.filter(perfume => {
+      const perfumeName = (perfume.perfume || perfume.nombre || '').toLowerCase();
+      const brand = (perfume.marca || '').toLowerCase();
+      const notes = [
+        perfume.salida || '',
+        perfume.corazon || '',
+        perfume.base || '',
+        perfume.notas || ''
+      ].join(' ').toLowerCase();
+      
+      return perfumeName.includes(query) || 
+             brand.includes(query) || 
+             notes.includes(query);
+    });
+  };
+
+  // Obtener perfumes para mostrar (con paginación y filtro)
+  const getDisplayPerfumes = () => {
+    const filtered = getFilteredPerfumes();
+    const totalFilteredPages = Math.ceil(filtered.length / itemsPerPage);
+    
+    // Si hay búsqueda activa, actualizar total de páginas
+    if (searchQuery.trim() && totalFilteredPages !== totalPages) {
+      setTotalPages(totalFilteredPages);
+    } else if (!searchQuery.trim()) {
+      // Si no hay búsqueda, restaurar páginas totales originales
+      const originalTotal = Math.ceil(allPerfumes.length / itemsPerPage);
+      if (originalTotal !== totalPages) {
+        setTotalPages(originalTotal);
+      }
+    }
+    
+    // Ajustar página actual si es necesario
+    if (currentPage > totalFilteredPages && totalFilteredPages > 0) {
+      setCurrentPage(totalFilteredPages);
+    }
+    
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filtered.slice(startIndex, endIndex);
+  };
+
   // Cambiar de página
-  const goToPage = (pageNumber, perfumesData = allPerfumes) => {
-    if (pageNumber < 1 || pageNumber > totalPages) return;
+  const goToPage = (pageNumber, perfumesData = getFilteredPerfumes()) => {
+    const filteredPerfumes = perfumesData;
+    const totalFilteredPages = Math.ceil(filteredPerfumes.length / itemsPerPage);
+    
+    if (pageNumber < 1 || pageNumber > totalFilteredPages) return;
     
     setCurrentPage(pageNumber);
     
     const startIndex = (pageNumber - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const pagePerfumes = perfumesData.slice(startIndex, endIndex);
+    const pagePerfumes = filteredPerfumes.slice(startIndex, endIndex);
     
     setPerfumes(pagePerfumes);
     
@@ -137,8 +193,11 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
 
   // Ir a la página siguiente
   const nextPage = () => {
-    if (currentPage < totalPages) {
-      goToPage(currentPage + 1);
+    const filteredPerfumes = getFilteredPerfumes();
+    const totalFilteredPages = Math.ceil(filteredPerfumes.length / itemsPerPage);
+    
+    if (currentPage < totalFilteredPages) {
+      goToPage(currentPage + 1, filteredPerfumes);
     }
   };
 
@@ -192,6 +251,12 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
 
   const handleViewDetails = (perfume) => {
     setSelectedPerfume(perfume);
+  };
+
+  // Manejar cambio en búsqueda
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1); // Resetear a primera página al buscar
   };
 
   // --- ESTILOS VISUALES ---
@@ -276,8 +341,10 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
   };
 
   // Calcular índices para mostrar
+  const filteredPerfumes = getFilteredPerfumes();
+  const displayPerfumes = getDisplayPerfumes();
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
-  const endIndex = Math.min(currentPage * itemsPerPage, allPerfumes.length);
+  const endIndex = Math.min(currentPage * itemsPerPage, filteredPerfumes.length);
 
   return (
     <div style={containerStyle}>
@@ -330,8 +397,37 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
               </div>
             </div>
 
-            {/* SE ELIMINÓ LA SECCIÓN DE INFORMACIÓN DE CARGA Y PAGINACIÓN SUPERIOR */}
-            {/* Aquí estaba la información que mostraba "Página X de X" y los controles de paginación */}
+            {/* Buscador de perfumes */}
+            <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
+              <input
+                type="text"
+                placeholder="Buscar perfume..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="input"
+                style={{ paddingLeft: '2.5rem', width: '100%' }}
+              />
+              <Search size={20} style={{ 
+                position: 'absolute', 
+                left: '0.8rem', 
+                top: '50%', 
+                transform: 'translateY(-50%)',
+                color: '#ff9900ff'
+              }} />
+            </div>
+
+            {/* Información de resultados de búsqueda */}
+            {searchQuery && (
+              <div style={{ 
+                color: '#F3E5AB', 
+                textAlign: 'center', 
+                marginBottom: '1rem',
+                fontSize: '0.9rem'
+              }}>
+                🔍 Mostrando {filteredPerfumes.length} perfumes de {allPerfumes.length} totales
+                {filteredPerfumes.length === 0 && ' - No se encontraron resultados'}
+              </div>
+            )}
 
             {/* Mensajes de error */}
             {error && (
@@ -347,8 +443,8 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
                 style={gridContainerStyle}
                 ref={gridRef}
               >
-                {perfumes.length > 0 ? (
-                  perfumes.map((perfume, index) => (
+                {displayPerfumes.length > 0 ? (
+                  displayPerfumes.map((perfume, index) => (
                     <div 
                       key={`${perfume.id || index}-${currentPage}`}
                       style={{
@@ -432,14 +528,19 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
                     color: '#F3E5AB'
                   }}>
                     <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>😔</div>
-                    <p>No se encontraron perfumes para {brandName}</p>
+                    <p>
+                      {searchQuery 
+                        ? `No se encontraron perfumes que coincidan con "${searchQuery}"`
+                        : `No se encontraron perfumes para ${brandName}`
+                      }
+                    </p>
                   </div>
                 )}
               </div>
             )}
 
             {/* Controles de paginación inferiores */}
-            {!loading && totalPages > 1 && (
+            {!loading && totalPages > 1 && filteredPerfumes.length > 0 && (
               <div style={{
                 display: 'flex',
                 justifyContent: 'center',
@@ -539,7 +640,12 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
                 borderRadius: '0.5rem'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                  <span> Total: {allPerfumes.length} perfumes</span>
+                  <span>
+                    {searchQuery 
+                      ? `Mostrando ${filteredPerfumes.length} de ${allPerfumes.length} perfumes` 
+                      : `Total: ${allPerfumes.length} perfumes`
+                    }
+                  </span>
                  
                   {allPerfumes.length % itemsPerPage !== 0 && (
                     <>
