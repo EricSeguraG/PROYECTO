@@ -186,6 +186,33 @@ const PerfumeDetailModal = ({ perfume, user, onClose }) => {
                   <strong style={{ color: '#F3E5AB' }}>Notas de Base:</strong> {perfume.base}
                 </div>
               )}
+              
+              {/* SECCIÓN DE ACORDES AÑADIDA */}
+              {perfume.main_accords && (
+                <div style={{ 
+                  gridColumn: 'span 2',
+                  marginTop: '0.5rem',
+                  paddingTop: '0.5rem',
+                  borderTop: '1px solid rgba(243, 229, 171, 0.2)'
+                }}>
+                  <strong style={{ 
+                    color: '#F3E5AB',
+                    display: 'block',
+                    marginBottom: '0.3rem'
+                  }}>
+                    Acordes:
+                  </strong>
+                  <div style={{ 
+                    color: 'rgba(255,255,255,0.9)',
+                    fontSize: '0.9rem',
+                    lineHeight: '1.4'
+                  }}>
+                    {Array.isArray(perfume.main_accords) 
+                      ? perfume.main_accords.join(', ')
+                      : perfume.main_accords}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

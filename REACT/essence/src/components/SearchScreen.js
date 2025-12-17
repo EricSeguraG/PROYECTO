@@ -1,9 +1,9 @@
 // src/components/SearchScreen.js
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useSearch } from '../hooks/useSearch';
 import { useAuth } from '../hooks/useAuth';
-import PerfumeDetailModal from './PerfumeDetailModal'; // <--- 1. Importamos el Modal
+import PerfumeDetailModal from './PerfumeDetailModal';
 
 const SearchScreen = ({ onBack, searchMode }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,7 +16,6 @@ const SearchScreen = ({ onBack, searchMode }) => {
     perfumista: ''
   });
   
-  // 2. Estado para el Modal
   const [selectedPerfume, setSelectedPerfume] = useState(null);
   
   const { 
@@ -28,6 +27,7 @@ const SearchScreen = ({ onBack, searchMode }) => {
   } = useSearch();
 
   const auth = useAuth();
+  const gridRef = useRef(null);
 
   const handleSearch = (e) => {
     e?.preventDefault();
@@ -36,15 +36,12 @@ const SearchScreen = ({ onBack, searchMode }) => {
     console.log('📝 Query:', searchQuery);
     console.log('🔧 Filtros:', filters);
     
-    // Crear objeto de filtros combinando búsqueda principal y filtros
     const searchFilters = { ...filters };
     
-    // Si hay búsqueda en el input principal, usarla como filtro de perfume
     if (searchQuery.trim()) {
       searchFilters.perfume = searchQuery;
     }
     
-    // Llamar a la función de búsqueda
     searchPerfumes(searchQuery, searchFilters);
   };
 
@@ -59,10 +56,9 @@ const SearchScreen = ({ onBack, searchMode }) => {
       perfumista: ''
     });
     clearResults();
-    setSelectedPerfume(null); // 3. Limpiar perfume seleccionado
+    setSelectedPerfume(null);
   };
 
-  // 4. Modificamos esta función para abrir el Modal
   const handleViewDetails = (perfume) => {
     setSelectedPerfume(perfume);
   };
@@ -103,7 +99,46 @@ const SearchScreen = ({ onBack, searchMode }) => {
     flexDirection: 'column'
   };
 
-  // Obtener el nombre del usuario si está en modo user
+  // Grid de 2 columnas con scroll - IDÉNTICO a PerfumesByBrandScreen
+  const gridContainerStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '1.2rem',
+    marginTop: '1rem',
+    maxHeight: 'calc(280px * 5 + 1.2rem * 4)',
+    overflowY: 'auto',
+    paddingRight: '0.5rem',
+    paddingBottom: '1rem'
+  };
+
+  // Estilos CSS para la scrollbar - IDÉNTICO
+  const scrollbarStyles = `
+    .search-results-grid::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .search-results-grid::-webkit-scrollbar-track {
+      background: rgba(243, 229, 171, 0.1);
+      border-radius: 4px;
+    }
+    
+    .search-results-grid::-webkit-scrollbar-thumb {
+      background: rgba(243, 229, 171, 0.6);
+      border-radius: 4px;
+    }
+    
+    .search-results-grid::-webkit-scrollbar-thumb:hover {
+      background: rgba(243, 229, 171, 0.8);
+    }
+
+    /* Responsive - IDÉNTICO */
+    @media (max-width: 768px) {
+      .search-results-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  `;
+
   const getUserDisplayName = () => {
     if (searchMode === 'user' && auth.user) {
       return `${auth.user.name || 'Usuario'} ${auth.user.lastname || ''}`.trim();
@@ -113,6 +148,8 @@ const SearchScreen = ({ onBack, searchMode }) => {
 
   return (
     <div style={containerStyle}>
+      <style>{scrollbarStyles}</style>
+      
       <video autoPlay muted loop playsInline style={videoStyle}>
         <source src="/videos/vid.mp4" type="video/mp4" />
         Tu navegador no soporta el elemento de video.
@@ -121,7 +158,7 @@ const SearchScreen = ({ onBack, searchMode }) => {
       <div style={overlayStyle}></div>
 
       <div style={contentStyle}>
-        {/* Header con las clases CSS definidas en App.css */}
+        {/* Header */}
         <header className="header">
           <div className="header-left">
             <h1 className="logo">ESSENCE</h1>
@@ -144,7 +181,7 @@ const SearchScreen = ({ onBack, searchMode }) => {
 
         {/* Contenido principal */}
         <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
-          <div className="card" style={{ maxWidth: '800px', margin: '0 auto', width: '95%' }}>
+          <div className="card" style={{ maxWidth: '1100px', margin: '0 auto', width: '95%' }}>
             
             {/* Recuadro MULTIBUSCADOR arriba del buscador */}
             <div style={{ 
@@ -356,107 +393,181 @@ const SearchScreen = ({ onBack, searchMode }) => {
             )}
           </div>
 
-          {/* Resultados */}
-          <div style={{ maxWidth: '800px', margin: '1rem auto 0', width: '95%' }}>
-            {searchResults.length > 0 && (
-              <div className="card">
-                <h3 style={{ color: '#F3E5AB', marginBottom: '1rem', fontSize: '1.1rem' }}>
-                  {searchResults.length} perfumes encontrados
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                  {searchResults.map((perfume, index) => (
-                    <div 
-                      key={index}
-                      style={{
-                        padding: '1rem',
-                        background: 'rgba(113, 54, 0, 0.9)',
-                        borderRadius: '0.8rem',
-                        border: '2px solid #F3E5AB',
-                        color: '#F3E5AB',
-                        position: 'relative'
-                      }}
-                    >
-                      <h4 style={{ 
-                        margin: '0 0 0.5rem 0', 
-                        color: '#F3E5AB',
-                        fontSize: '1.1rem'
-                      }}>
-                        {perfume.perfume || 'Nombre no disponible'}
-                      </h4>
-                      
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem' }}>
-                        <div>
-                          <strong>Marca:</strong> {perfume.marca || 'N/A'}
-                        </div>
-                        <div>
-                          <strong>Género:</strong> {perfume.genero || 'N/A'}
-                        </div>
-                        <div>
-                          <strong>Perfumista:</strong> {perfume.perfumista || 'N/A'}
-                        </div>
-                        <div>
-                          <strong>Año:</strong> {perfume.año || 'N/A'}
-                        </div>
-                      </div>
-
-                      {/* Notas */}
-                      {(perfume.salida || perfume.corazon || perfume.base) && (
-                        <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                          <strong>Notas:</strong>
-                          {perfume.salida && <div>• Salida: {perfume.salida}</div>}
-                          {perfume.corazon && <div>• Corazón: {perfume.corazon}</div>}
-                          {perfume.base && <div>• Base: {perfume.base}</div>}
-                        </div>
-                      )}
-
-                      {/* Acordes principales */}
-                      {perfume.main_accords && perfume.main_accords.length > 0 && (
-                        <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                          <strong>Acordes:</strong> {Array.isArray(perfume.main_accords) ? perfume.main_accords.join(', ') : perfume.main_accords}
-                        </div>
-                      )}
-
-                      {/* Botón de acción - Solo Ver Detalles */}
-                      <div style={{ 
-                        display: 'flex', 
-                        gap: '0.5rem', 
-                        marginTop: '0.8rem',
-                        justifyContent: 'flex-end'
-                      }}>
-                        <button 
-                          className="btn"
-                          style={{ 
-                            padding: '0.3rem 0.6rem', 
-                            fontSize: '0.8rem',
-                            background: 'rgba(243, 229, 171, 0.9)',
-                            color: '#713600'
-                          }}
-                          onClick={() => handleViewDetails(perfume)}
-                        >
-                          Ver Detalles y Comentar
-                        </button>
-                      </div>
+          {/* Resultados en Grid de 2 columnas - IDÉNTICO a PerfumesByBrandScreen */}
+          {searchResults.length > 0 && (
+            <div className="card" style={{ 
+              maxWidth: '1100px', 
+              margin: '1rem auto 0', 
+              width: '95%',
+              padding: '1.5rem'
+            }}>
+              <h3 style={{ 
+                color: '#F3E5AB', 
+                marginBottom: '1.5rem', 
+                fontSize: '1.2rem',
+                textAlign: 'center'
+              }}>
+                 {searchResults.length} perfumes encontrados
+              </h3>
+              
+              <div 
+                className="search-results-grid"
+                style={gridContainerStyle}
+                ref={gridRef}
+              >
+                {searchResults.map((perfume, index) => (
+                  <div 
+                    key={`${perfume.id || index}`}
+                    style={{
+                      padding: '1.2rem',
+                      background: 'rgba(113, 54, 0, 0.9)',
+                      borderRadius: '0.8rem',
+                      border: '2px solid #F3E5AB',
+                      color: '#F3E5AB',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      minHeight: '280px'
+                    }}
+                  >
+                    {/* Nombre del perfume - IDÉNTICO */}
+                    <h4 style={{ 
+                      margin: '0 0 1rem 0', 
+                      color: '#F3E5AB', 
+                      fontSize: '1.1rem',
+                      textAlign: 'center',
+                      lineHeight: '1.3'
+                    }}>
+                      {perfume.perfume || 'Nombre no disponible'}
+                    </h4>
+                    
+                    {/* Información básica en grid - IDÉNTICO */}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: '1fr 1fr', 
+                      gap: '0.8rem', 
+                      fontSize: '0.9rem',
+                      marginBottom: '1rem',
+                      flex: 1
+                    }}>
+                      <div><strong>Marca:</strong> {perfume.marca || 'N/A'}</div>
+                      <div><strong>Género:</strong> {perfume.genero || 'N/A'}</div>
+                      <div><strong>Año:</strong> {perfume.año || 'N/A'}</div>
+                      <div><strong>Perfumista:</strong> {perfume.perfumista || 'N/A'}</div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {!loading && searchResults.length === 0 && (filters.perfume || filters.marca || filters.genero || filters.nota || filters.acorde || filters.perfumista) && (
-              <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
-                <p style={{ color: '#F3E5AB', marginBottom: '1rem' }}>
-                  No se encontraron perfumes que coincidan con tu búsqueda
-                </p>
-                <button className="link" onClick={handleClear}>
-                  Limpiar búsqueda
-                </button>
+                    {/* Notas - IDÉNTICO */}
+                    {(perfume.salida || perfume.corazon || perfume.base) && (
+                      <div style={{ 
+                        marginBottom: '1rem', 
+                        fontSize: '0.85rem',
+                        background: 'rgba(243, 229, 171, 0.1)',
+                        padding: '0.8rem',
+                        borderRadius: '0.4rem'
+                      }}>
+                        <strong style={{ display: 'block', marginBottom: '0.3rem' }}>Notas:</strong>
+                        {perfume.salida && <div style={{ fontSize: '0.8rem' }}>• Salida: {perfume.salida}</div>}
+                        {perfume.corazon && <div style={{ fontSize: '0.8rem' }}>• Corazón: {perfume.corazon}</div>}
+                        {perfume.base && <div style={{ fontSize: '0.8rem' }}>• Base: {perfume.base}</div>}
+                      </div>
+                    )}
+
+                    {/* Acordes principales - IDÉNTICO */}
+                    {perfume.main_accords && perfume.main_accords.length > 0 && (
+                      <div style={{ 
+                        marginBottom: '1rem', 
+                        fontSize: '0.85rem',
+                        background: 'rgba(243, 229, 171, 0.1)',
+                        padding: '0.8rem',
+                        borderRadius: '0.4rem'
+                      }}>
+                        <strong style={{ display: 'block', marginBottom: '0.3rem' }}>Acordes:</strong>
+                        <div style={{ fontSize: '0.8rem' }}>
+                          {Array.isArray(perfume.main_accords) 
+                            ? perfume.main_accords.join(', ')
+                            : perfume.main_accords}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Botón de acción - IDÉNTICO */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'flex-end', 
+                      marginTop: 'auto'
+                    }}>
+                      <button 
+                        className="btn"
+                        style={{ 
+                          padding: '0.5rem 1rem', 
+                          fontSize: '0.85rem',
+                          background: 'rgba(243, 229, 171, 0.9)',
+                          color: '#713600',
+                          border: '1px solid #F3E5AB',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => handleViewDetails(perfume)}
+                      >
+                        Ver Detalles y Comentar
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
+
+              {/* Indicador de scroll si hay muchos resultados */}
+              {searchResults.length > 10 && (
+                <div style={{ 
+                  textAlign: 'center', 
+                  marginTop: '1rem',
+                  color: 'rgba(243, 229, 171, 0.7)',
+                  fontSize: '0.85rem'
+                }}>
+                  <span style={{ display: 'inline-block', animation: 'bounce 2s infinite' }}>
+                    ⬇️ Desplázate para ver más perfumes
+                  </span>
+                  <style>{`
+                    @keyframes bounce {
+                      0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+                      40% {transform: translateY(-5px);}
+                      60% {transform: translateY(-3px);}
+                    }
+                  `}</style>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Mensaje cuando no hay resultados */}
+          {!loading && searchResults.length === 0 && (filters.perfume || filters.marca || filters.genero || filters.nota || filters.acorde || filters.perfumista) && (
+            <div className="card" style={{ 
+              maxWidth: '1100px', 
+              margin: '1rem auto 0', 
+              width: '95%',
+              textAlign: 'center', 
+              padding: '3rem' 
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+              <p style={{ color: '#F3E5AB', marginBottom: '1.5rem', fontSize: '1.1rem' }}>
+                No se encontraron perfumes que coincidan con tu búsqueda
+              </p>
+              <button 
+                className="btn" 
+                onClick={handleClear}
+                style={{ 
+                  padding: '0.7rem 2rem',
+                  background: 'rgba(243, 229, 171, 0.9)',
+                  color: '#713600'
+                }}
+              >
+                Limpiar búsqueda
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* 5. AÑADIDO: El Modal de Comentarios */}
+      {/* Modal de Comentarios */}
       {selectedPerfume && (
         <PerfumeDetailModal 
           perfume={selectedPerfume}

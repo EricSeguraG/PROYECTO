@@ -1,14 +1,18 @@
 // src/components/BrandsScreen.js
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Search, Sparkles } from 'lucide-react';
 import { perfumeAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+
+// Importamos el SearchScreen para poder mostrar el multibuscador
+import SearchScreen from './SearchScreen'; // Asegúrate de que la ruta sea correcta
 
 const BrandsScreen = ({ onBack, onBrandSelect, searchMode }) => {
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false); // Nuevo estado para controlar el multibuscador
   
   const auth = useAuth();
 
@@ -120,6 +124,16 @@ const BrandsScreen = ({ onBack, onBrandSelect, searchMode }) => {
     return 'Usuario';
   };
 
+  // Si showAdvancedSearch es true, renderizamos el SearchScreen
+  if (showAdvancedSearch) {
+    return (
+      <SearchScreen 
+        onBack={() => setShowAdvancedSearch(false)} // Volver a BrandsScreen
+        searchMode={searchMode}
+      />
+    );
+  }
+
   return (
     <div style={containerStyle}>
       {/* Estilos del scrollbar */}
@@ -133,7 +147,7 @@ const BrandsScreen = ({ onBack, onBrandSelect, searchMode }) => {
       <div style={overlayStyle}></div>
 
       <div style={contentStyle}>
-        {/* Header */}
+        {/* Header (igual que antes) */}
         <header className="header">
           <div className="header-left">
             <h1 className="logo">ESSENCE</h1>
@@ -191,6 +205,71 @@ const BrandsScreen = ({ onBack, onBrandSelect, searchMode }) => {
                 transform: 'translateY(-50%)',
                 color: '#ff9900ff'
               }} />
+            </div>
+
+            {/* Botón de BÚSQUEDA AVANZADA - ESPECIAL DORADO */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              marginBottom: '1.5rem' 
+            }}>
+              <button 
+                className="btn"
+                onClick={() => setShowAdvancedSearch(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  padding: '0.7rem 1.5rem',
+                  fontSize: '1rem',
+                  fontWeight: '700',
+                  background: 'linear-gradient(135deg, #F3E5AB 0%, #D4AF37 50%, #F3E5AB 100%)',
+                  color: '#000000f3',
+                  border: '2px solid #D4AF37',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  boxShadow: '0 4px 20px rgba(212, 175, 55, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  minWidth: '220px',
+                  justifyContent: 'center',
+                  height: '48px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #FFD700 0%, #D4AF37 60%, #FFD700 100%)';
+                  e.currentTarget.style.boxShadow = '0 6px 25px rgba(212, 175, 55, 0.7), 0 0 20px rgba(255, 215, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.6)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #F3E5AB 0%, #D4AF37 50%, #F3E5AB 100%)';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(212, 175, 55, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                {/* Efecto brillo dorado */}
+                <div style={{
+                  position: 'absolute',
+                  top: '-50%',
+                  left: '-50%',
+                  width: '200%',
+                  height: '200%',
+                  background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%)',
+                  transform: 'rotate(30deg)',
+                  transition: 'left 0.5s ease',
+                  pointerEvents: 'none'
+                }} 
+                className="shine-effect"
+                />
+                
+                <Sparkles size={20} style={{ 
+                  filter: 'drop-shadow(0 1px 2px rgba(113, 54, 0, 0.4))',
+                  color: '#713600'
+                }} />
+                BÚSQUEDA AVANZADA
+              </button>
             </div>
 
             {/* Mensajes de estado */}

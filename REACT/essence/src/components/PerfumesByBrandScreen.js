@@ -500,6 +500,24 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
                         </div>
                       )}
 
+                      {/* Acordes principales - NUEVA SECCIÓN AÑADIDA */}
+                      {perfume.main_accords && perfume.main_accords.length > 0 && (
+                        <div style={{ 
+                          marginBottom: '1rem', 
+                          fontSize: '0.85rem',
+                          background: 'rgba(243, 229, 171, 0.1)',
+                          padding: '0.8rem',
+                          borderRadius: '0.4rem'
+                        }}>
+                          <strong style={{ display: 'block', marginBottom: '0.3rem' }}>Acordes:</strong>
+                          <div style={{ fontSize: '0.8rem' }}>
+                            {Array.isArray(perfume.main_accords) 
+                              ? perfume.main_accords.join(', ')
+                              : perfume.main_accords}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Botón de detalles */}
                       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto' }}>
                         <button 
