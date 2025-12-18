@@ -32,15 +32,33 @@ const loadCelebritiesDB = async () => {
 };
 
 // Wrapper para llamadas a PYTHON
+// Modifica la función fetchPython para incluir logs:
 const fetchPython = async (endpoint) => {
   try {
+    console.log(`🚀 Llamando a Flask API: ${FLASK_API}${endpoint}`);
+    
     const response = await fetch(`${FLASK_API}${endpoint}`);
-    if (!response.ok) throw new Error(`Error Python API: ${response.statusText}`);
+    
+    console.log(`📊 Respuesta de Flask: ${response.status} ${response.statusText}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Error en Flask API (${response.status}):`, errorText);
+      throw new Error(`Error Python API: ${response.statusText}`);
+    }
+    
     const data = await response.json();
+    console.log('✅ Datos recibidos de Flask:', {
+      endpoint: endpoint,
+      data_keys: Object.keys(data),
+      has_similares: !!(data.similares),
+      similares_count: data.similares ? data.similares.length : 0
+    });
+    
     return replaceHyphensInData(data);
   } catch (error) {
     console.error('❌ Error fetching Python:', error);
-    return []; 
+    return {}; // Cambié de [] a {} porque algunas respuestas son objetos
   }
 };
 
@@ -115,8 +133,22 @@ export const perfumeAPI = {
     return data.resultados || [];
   },
 
-  searchClones: async (perfumeName) => {
-    const data = await fetchPython(`/perfumes/similares?nombre=${encodeURIComponent(perfumeName)}`);
+  
+  searchClones: async (perfumeName, similarityThreshold = 70) => {
+    console.log('📡 API: Llamando a /perfumes/similares con:', {
+      perfumeName,
+      similarityThreshold
+    });
+    
+    const data = await fetchPython(
+      `/perfumes/similares?nombre=${encodeURIComponent(perfumeName)}&umbral=${similarityThreshold}`
+    );
+    
+    console.log('📦 API: Datos recibidos de Flask:', {
+      similares_recibidos: data.similares ? data.similares.length : 0,
+      umbral_en_api: data.umbral || 'No especificado'
+    });
+    
     return data.similares || [];
   },
 

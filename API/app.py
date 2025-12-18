@@ -73,8 +73,10 @@ def reemplazar_guiones_respuesta(obj):
 # Diccionarios de traducción
 # --------------------------------------------------
 TRADUCCION_NOTAS = {
-    # Notas comunes
+
+    # Generales
     'amber': 'ámbar',
+    'ambergris': 'ámbar gris',
     'woody': 'madera',
     'citrus': 'cítrico',
     'floral': 'floral',
@@ -91,83 +93,106 @@ TRADUCCION_NOTAS = {
     'musky': 'almizclado',
     'aquatic': 'acuático',
     'herbal': 'herbal',
-    'white-floral': 'flor blanco',
+
+    # Flores
     'rose': 'rosa',
     'jasmine': 'jazmín',
-    'vanilla': 'vainilla',
-    'patchouli': 'pachulí',
-    'sandalwood': 'sándalo',
-    'cedar': 'cedro',
+    'orange blossom': 'flor de azahar',
+    'tuberose': 'tuberosa',
+    'ylang-ylang': 'ylang-ylang',
+    'iris': 'iris',
+    'violet': 'violeta',
+    'lavender': 'lavanda',
+    'magnolia': 'magnolia',
+    'freesia': 'fresia',
+    'lotus': 'loto',
+    'heliotrope': 'heliotropo',
+    'osmanthus': 'osmanto',
+    'lily': 'lirio',
+
+    # Frutas
     'bergamot': 'bergamota',
     'lemon': 'limón',
     'orange': 'naranja',
     'mandarin': 'mandarina',
     'grapefruit': 'pomelo',
-    'neroli': 'neroli',
-    'ylang-ylang': 'ylang-ylang',
-    'tuberose': 'tuberosa',
-    'lily': 'lirio',
-    'violet': 'violeta',
-    'iris': 'iris',
-    'lavender': 'lavanda',
-    'pepper': 'pimienta',
-    'cinnamon': 'canela',
-    'clove': 'clavo',
-    'ginger': 'jengibre',
-    'nutmeg': 'nuez moscada',
-    'cardamom': 'cardamomo',
-    'incense': 'incienso',
-    'oud': 'oud',
-    'tonka-bean': 'haba tonka',
-    'benzoin': 'benjuí',
-    'labdanum': 'ládano',
-    'oakmoss': 'musgo de roble',
-    'vetiver': 'vetiver',
-    'mossy': 'musgoso',
-    'earthy': 'terroso',
-    'smoky': 'ahumado',
-    'balsamic': 'balsámico',
-    'honey': 'miel',
-    'coffee': 'café',
-    'chocolate': 'chocolate',
-    'caramel': 'caramelo',
-    'almond': 'almendra',
-    'coconut': 'coco',
     'apple': 'manzana',
     'pear': 'pera',
     'peach': 'durazno',
-    'berry': 'baya',
-    'blackberry': 'mora',
+    'blackcurrant': 'grosella negra',
     'raspberry': 'frambuesa',
     'strawberry': 'fresa',
     'cherry': 'cereza',
     'plum': 'ciruela',
     'fig': 'higo',
-    'melon': 'melón',
     'pineapple': 'piña',
+    'melon': 'melón',
     'mango': 'mango',
-    'litchi': 'litchi',
-    'ozonic': 'ozónico',
-    'marine': 'marino',
-    'mineral': 'mineral',
-    'metallic': 'metálico',
-    'animalic': 'animal',
-    'civet': 'civeta',
-    'castoreum': 'castóreo',
-    'fresh-spicy': 'especiado fresco',
-    'woody-aromatic': 'aromático maderoso',
-    'floral-fruity': 'floral frutal',
-    'citrus-aromatic': 'aromático cítrico'
+    'pomegranate': 'granada',
+    'rhubarb': 'ruibarbo',
+
+    # Maderas y resinas
+    'sandalwood': 'sándalo',
+    'cedar': 'cedro',
+    'virginian cedar': 'cedro de virginia',
+    'guaiac wood': 'madera de guayaco',
+    'vetiver': 'vetiver',
+    'patchouli': 'pachulí',
+    'oud': 'oud',
+    'oakmoss': 'musgo de roble',
+    'cashmeran': 'cashmerán',
+    'elemi': 'elemi',
+    'benzoin': 'benjuí',
+    'labdanum': 'ládano',
+    'opoponax': 'opopónaco',
+    'styrax': 'estoraque',
+
+    # Especias
+    'pepper': 'pimienta',
+    'pink pepper': 'pimienta rosa',
+    'cardamom': 'cardamomo',
+    'cinnamon': 'canela',
+    'clove': 'clavo',
+    'nutmeg': 'nuez moscada',
+    'ginger': 'jengibre',
+    'saffron': 'azafrán',
+
+    # Dulces
+    'vanilla': 'vainilla',
+    'tonka bean': 'haba tonka',
+    'caramel': 'caramelo',
+    'chocolate': 'chocolate',
+    'coffee': 'café',
+    'praline': 'praliné',
+    'honey': 'miel',
+    'almond': 'almendra',
+    'coconut': 'coco',
+    'toffee': 'toffee',
+    'marshmallow': 'malvavisco',
+    'condensed milk': 'leche condensada',
+
+    # Otros
+    'incense': 'incienso',
+    'tobacco': 'tabaco',
+    'suede': 'ante',
+    'salt': 'sal',
+    'ink': 'tinta',
+    'ozone': 'ozono',
+    'smoky': 'ahumado',
+    'earthy': 'terroso',
+    'balsamic': 'balsámico',
+    'animalic': 'animal'
 }
 
+
 TRADUCCION_ACORDES = {
+
     'woody': 'madera',
     'amber': 'ámbar',
     'aromatic': 'aromático',
     'citrus': 'cítrico',
     'floral': 'floral',
     'fresh': 'fresco',
-    'spicy': 'especiado',
     'green': 'verde',
     'fruity': 'frutal',
     'gourmand': 'gourmand',
@@ -178,15 +203,26 @@ TRADUCCION_ACORDES = {
     'musky': 'almizclado',
     'aquatic': 'acuático',
     'herbal': 'herbal',
-    'white-floral': 'flor blanco',
-    'rose': 'rosa',
-    'fougere': 'fougère',
-    'aldehydic': 'aldehídico',
-    'animalic': 'animal',
-    'balsamic': 'balsámico',
+
+    'sweet': 'dulce',
+    'warm spicy': 'especiado cálido',
+    'soft spicy': 'especiado suave',
+    'fresh spicy': 'especiado fresco',
+    'lactonic': 'lactónico',
+    'creamy': 'cremoso',
+    'soapy': 'jabonoso',
+    'metallic': 'metálico',
+    'mineral': 'mineral',
+    'ozonic': 'ozónico',
+    'smoky': 'ahumado',
     'earthy': 'terroso',
-    'smoky': 'ahumado'
+    'balsamic': 'balsámico',
+    'animalic': 'animal',
+    'tobacco': 'tabaco',
+    'nutty': 'avellanado',
+    'cacao': 'cacao'
 }
+
 
 TRADUCCION_GENEROS = {
     'for-men': 'para hombre',
@@ -639,10 +675,18 @@ def get_similares_nombre():
     nombre = request.args.get('nombre')
     if not nombre:
         abort(400, description="Debes proporcionar el parámetro 'nombre'")
+    
+    # Obtener umbral de similitud (porcentaje, default 70%)
+    umbral_param = request.args.get('umbral', 70)
+    try:
+        umbral = float(umbral_param) / 100.0  # Convertir porcentaje a decimal (70% -> 0.7)
+    except ValueError:
+        umbral = 0.7  # Valor por defecto si no es válido
 
     # CONVERTIR ESPACIOS A GUIONES PARA BÚSQUEDA
     nombre_con_guiones = nombre.replace(" ", "-")
     print(f"🔍 Buscando similares para: '{nombre}' -> '{nombre_con_guiones}'")
+    print(f"🔍 Umbral de similitud: {umbral_param}% ({umbral})")
 
     coincidencias = df[df['perfume'].astype(str).str.contains(nombre_con_guiones, case=False, na=False)]
     if coincidencias.empty:
@@ -654,8 +698,14 @@ def get_similares_nombre():
     similitudes = cosine_similarity(base_vec, MATRIZ_VECTORES)[0]
     df['score_similaridad'] = similitudes
 
-    similares = df[df.index != idx_base].sort_values('score_similaridad', ascending=False)
-    top_n = int(request.args.get('n', 10))
+    # FILTRAR por umbral y excluir el perfume base
+    similares = df[(df.index != idx_base) & (df['score_similaridad'] >= umbral)]
+    
+    # Ordenar por similitud
+    similares = similares.sort_values('score_similaridad', ascending=False)
+    
+    # Limitar cantidad si se especifica
+    top_n = int(request.args.get('n', 50))  # Aumentar default para que el filtro funcione
     similares = similares.head(top_n)
 
     similares_out = filtrar_campos(similares).copy()
@@ -664,9 +714,12 @@ def get_similares_nombre():
     base_limpio = preparar_respuesta(filtrar_campos(df.iloc[[idx_base]]).iloc[0].to_dict())
     similares_limpios = [preparar_respuesta(perfume) for perfume in similares_out.to_dict(orient='records')]
 
+    print(f"✅ Encontrados {len(similares_limpios)} perfumes con similitud >= {umbral_param}%")
+
     return jsonify({
         'termino_buscado': nombre,
         'base': base_limpio,
+        'umbral': umbral_param,
         'similares': similares_limpios
     })
 

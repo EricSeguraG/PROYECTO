@@ -273,7 +273,7 @@ const ClonesScreen = ({ onBack, searchMode }) => {
                       key={index}
                       style={{
                         padding: '1rem',
-                        background: 'rgba(113, 54, 0, 0.9)',
+                        background: 'rgba(0, 0, 0, 0.9)',
                         borderRadius: '0.8rem',
                         border: '2px solid #F3E5AB',
                         color: '#F3E5AB',

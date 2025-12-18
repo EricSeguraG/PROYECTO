@@ -1,3 +1,4 @@
+// src/hooks/useClones.js
 import { useState } from 'react';
 import { perfumeAPI } from '../services/api';
 
@@ -18,13 +19,25 @@ export const useClones = () => {
     setSelectedPerfume(perfumeName);
     
     try {
-      console.log('🔍 Buscando clones para:', perfumeName);
+      console.log('🔍 useClones: Iniciando búsqueda con:', {
+        perfumeName,
+        similarityThreshold
+      });
+      
       const results = await perfumeAPI.searchClones(perfumeName, similarityThreshold);
-      console.log('✅ Resultados recibidos:', results);
+      
+      console.log('✅ useClones: Resultados procesados:', {
+        cantidad: results.length,
+        primerResultado: results[0] ? {
+          nombre: results[0].perfume,
+          similitud: results[0].similitud
+        } : 'No hay resultados'
+      });
+      
       setClonesResults(results);
     } catch (err) {
-      console.error('❌ Error en searchClones:', err);
-      setError(`Error: ${err.message}`);
+      console.error('❌ Error en useClones:', err);
+      setError(`Error al buscar clones: ${err.message}`);
       setClonesResults([]);
     } finally {
       setLoading(false);

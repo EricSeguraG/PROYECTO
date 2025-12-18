@@ -36,6 +36,16 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
       return nameA.localeCompare(nameB);
     });
   };
+    const getPerfumeImage = (url) => {
+  if (!url) return null;
+
+  const match = url.match(/(\d+)\.html$/);
+  if (!match) return null;
+
+  const id = match[1];
+  return `https://fimgs.net/mdimg/perfume/375x500.${id}.jpg`;
+};
+
 
   // Cargar TODOS los perfumes de la marca
   const loadAllPerfumes = async () => {
@@ -390,7 +400,7 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
                 display: 'inline-block',
                 border: '2px solid #713600',
                 boxShadow: '0 0 20px rgba(243,229,171), inset 0 0 15px rgba(255, 215, 0, 0.2)',
-                color: '#713600',
+                color: '#713700ff',
                 textAlign: 'center'
               }}>
                 PERFUMES {brandName.toUpperCase()} (A-Z)
@@ -449,7 +459,7 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
                       key={`${perfume.id || index}-${currentPage}`}
                       style={{
                         padding: '1.2rem',
-                        background: 'rgba(113, 54, 0, 0.9)',
+                        background: 'rgba(0, 0, 0, 0.9)',
                         borderRadius: '0.8rem',
                         border: '2px solid #F3E5AB',
                         color: '#F3E5AB',
@@ -468,6 +478,32 @@ const PerfumesByBrandScreen = ({ onBack, brandName, searchMode }) => {
                       }}>
                         {perfume.perfume || perfume.nombre}
                       </h3>
+                      {/* Imagen del perfume */}
+                      {getPerfumeImage(perfume.url) && (
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'center', 
+                          marginBottom: '0.8rem' 
+                        }}>
+                          <img
+                            src={getPerfumeImage(perfume.url)}
+                            alt={perfume.perfume || perfume.nombre}
+                            loading="lazy"
+                            style={{
+                              width: '90px',
+                              height: '120px',
+                              objectFit: 'contain',
+                              borderRadius: '0.4rem',
+                              background: 'rgba(243, 229, 171, 0.15)',
+                              padding: '0.3rem'
+                            }}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+
                       
                       {/* Información básica en grid */}
                       <div style={{ 
