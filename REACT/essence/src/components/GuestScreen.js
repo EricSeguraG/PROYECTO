@@ -1,8 +1,15 @@
 // src/components/GuestScreen.js
 import React, { useState } from "react";
-import { Heart, BookOpen, FlaskConical, Copy, Star, Search, Home } from "lucide-react";
+import { Heart, BookOpen, FlaskConical, Copy, Star, Search, Home, Trophy} from "lucide-react";
 
-const GuestScreen = ({ onExit, onSearchClick, onClonesClick, onCelebrityClick, onPerfumesClick }) => {
+const GuestScreen = ({ 
+  onExit, 
+  onSearchClick, 
+  onClonesClick, 
+  onCelebrityClick, 
+  onPerfumesClick,
+  onTopRatedClick // <-- Nuevo prop
+}) => {
   const [toast, setToast] = useState("");
 
   const containerStyle = {
@@ -76,10 +83,11 @@ const GuestScreen = ({ onExit, onSearchClick, onClonesClick, onCelebrityClick, o
       action: onCelebrityClick
     },
     { 
-      icon: <Search />, 
-      label: "MULTIBUSCADOR",
+     
+      icon: <Trophy />, 
+      label: "LOS + VOTADOS",
       disabled: false,
-      action: onSearchClick
+      action: onTopRatedClick 
     },
   ];
 

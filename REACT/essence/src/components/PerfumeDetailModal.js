@@ -156,7 +156,7 @@ const PerfumeDetailModal = ({ perfume, user, onClose }) => {
               alignItems: 'center',
               gap: '0.5rem'
             }}>
-              🎨 Detalles del Perfume
+              
             </h3>
             
             <div style={{ 

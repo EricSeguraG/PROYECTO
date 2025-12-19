@@ -1,8 +1,16 @@
 // src/components/UserScreen.js
 import React from "react";
-import { Heart, BookOpen, FlaskConical, Copy, Star, Search, Home } from "lucide-react";
+import { Heart, BookOpen, FlaskConical, Copy, Star, Search, Home,Trophy } from "lucide-react";
 
-const UserScreen = ({ user, onLogout, onSearchClick, onClonesClick, onCelebrityClick, onPerfumesClick }) => {
+function UserScreen({ 
+  user, 
+  onLogout, 
+  onSearchClick, 
+  onClonesClick, 
+  onCelebrityClick, 
+  onPerfumesClick,
+  onTopRatedClick 
+}) {
   const containerStyle = {
     minHeight: '100vh',
     display: 'flex',
@@ -40,27 +48,39 @@ const UserScreen = ({ user, onLogout, onSearchClick, onClonesClick, onCelebrityC
   };
 
   const menuItems = [
-    { icon: <Heart />, label: "WISHLIST" },
-    { icon: <BookOpen />, label: "MI COLECCIÓN" },
+    { 
+      icon: <Heart />, 
+      label: "WISHLIST",
+      disabled: false
+    },
+    { 
+      icon: <BookOpen />, 
+      label: "MI COLECCIÓN",
+      disabled: false
+    },
     { 
       icon: <FlaskConical />, 
       label: "PERFUMES",
-      action: onPerfumesClick
+      disabled: false,
+      action: onPerfumesClick 
     },
     { 
       icon: <Copy />, 
       label: "CLONES/INSPIRACIONES",
+      disabled: false,
       action: onClonesClick
     },
     { 
       icon: <Star />, 
       label: "CELEBRITIES",
+      disabled: false,
       action: onCelebrityClick
     },
     { 
-      icon: <Search />, 
-      label: "MULTIBUSCADOR",
-      action: onSearchClick
+      icon: <Trophy />, 
+      label: "LOS + VOTADOS",
+      disabled: false,
+      action: onTopRatedClick 
     },
   ];
 
@@ -78,7 +98,7 @@ const UserScreen = ({ user, onLogout, onSearchClick, onClonesClick, onCelebrityC
           <div className="header-left">
             <h1 className="logo">ESSENCE</h1>
             <span className="user-mode-label">
-              [USER: {user?.name || "Usuario"} {user?.lastname || ""}]
+              {user?.name || "Usuario"} {user?.lastname || ""}
             </span>
           </div>
           <button className="exit-btn" onClick={onLogout}>

@@ -12,33 +12,30 @@ import ClonesScreen from "./components/ClonesScreen";
 import CelebrityScreen from "./components/CelebrityScreen";
 import BrandsScreen from "./components/BrandsScreen";
 import PerfumesByBrandScreen from "./components/PerfumesByBrandScreen";
+import TopRatedScreen from "./components/TopRatedScreen"; // <-- Nuevo componente
 import "./App.css";
 
 function App() {
   // Estados de navegación
-  const [mode, setMode] = useState("start"); // start | login | user | guest | search | clones | celebrity | brands | perfumes-by-brand
+  const [mode, setMode] = useState("start"); // start | login | user | guest | search | clones | celebrity | brands | perfumes-by-brand | top-rated
   const [searchMode, setSearchMode] = useState("user");
   const [selectedBrand, setSelectedBrand] = useState("");
   
-  // Hook de autenticación (Aquí vive la conexión con el Backend)
+  // Hook de autenticación
   const auth = useAuth();
 
-  // --- EFECTO MÁGICO PARA REDIRECCIONAR ---
-  // Este efecto vigila si 'auth.user' cambia. 
-  // Si el usuario se loguea correctamente (backend responde), nos manda a 'user'.
   useEffect(() => {
     if (auth.user) {
       setMode("user");
     }
   }, [auth.user]);
 
-  // Logout: Limpia usuario y vuelve al inicio
   const handleLogout = () => {
     auth.handleLogout();
     setMode("start");
   };
 
-  // Funciones de navegación del menú
+  // Funciones de navegación existentes
   const handleSearchClick = (fromMode) => {
     setSearchMode(fromMode);
     setMode("search");
@@ -59,6 +56,12 @@ function App() {
     setMode("brands");
   };
 
+  // NUEVA FUNCIÓN para "Los más votados"
+  const handleTopRatedClick = (fromMode) => {
+    setSearchMode(fromMode);
+    setMode("top-rated");
+  };
+
   const handleBrandSelect = (brandName) => {
     setSelectedBrand(brandName);
     setMode("perfumes-by-brand");
@@ -74,7 +77,6 @@ function App() {
     return (
       <StartScreen
         onUserClick={() => {
-          // Si ya hay sesión guardada, entra directo, si no, va a login
           if (auth.user) {
             setMode("user");
           } else {
@@ -89,9 +91,7 @@ function App() {
   if (mode === "login") {
     return (
       <LoginScreen
-        // Pasamos todas las props del hook useAuth (username, password, errores, etc.)
         {...auth}
-        // Navegación
         onBack={() => {
           setMode("start");
           auth.resetForm();
@@ -109,6 +109,7 @@ function App() {
         onClonesClick={() => handleClonesClick("user")}
         onCelebrityClick={() => handleCelebrityClick("user")}
         onPerfumesClick={() => handleBrandsClick("user")}
+        onTopRatedClick={() => handleTopRatedClick("user")} // <-- Nuevo prop
       />
     );
   }
@@ -121,6 +122,7 @@ function App() {
         onClonesClick={() => handleClonesClick("guest")}
         onCelebrityClick={() => handleCelebrityClick("guest")}
         onPerfumesClick={() => handleBrandsClick("guest")}
+        onTopRatedClick={() => handleTopRatedClick("guest")} // <-- Nuevo prop
       />
     );
   }
@@ -167,6 +169,16 @@ function App() {
       <PerfumesByBrandScreen 
         onBack={handleBackFromPerfumes}
         brandName={selectedBrand}
+        searchMode={searchMode}
+      />
+    );
+  }
+
+  // NUEVA PANTALLA: Los más votados
+  if (mode === "top-rated") {
+    return (
+      <TopRatedScreen 
+        onBack={() => setMode(searchMode)}
         searchMode={searchMode}
       />
     );

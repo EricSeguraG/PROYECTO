@@ -29,6 +29,17 @@ const SearchScreen = ({ onBack, searchMode }) => {
   const auth = useAuth();
   const gridRef = useRef(null);
 
+  // Función para obtener la imagen del perfume
+  const getPerfumeImage = (url) => {
+    if (!url) return null;
+
+    const match = url.match(/(\d+)\.html$/);
+    if (!match) return null;
+
+    const id = match[1];
+    return `https://fimgs.net/mdimg/perfume/375x500.${id}.jpg`;
+  };
+
   const handleSearch = (e) => {
     e?.preventDefault();
     
@@ -63,6 +74,7 @@ const SearchScreen = ({ onBack, searchMode }) => {
     setSelectedPerfume(perfume);
   };
 
+  // --- ESTILOS VISUALES ---
   const containerStyle = {
     minHeight: '100vh',
     display: 'flex',
@@ -393,7 +405,7 @@ const SearchScreen = ({ onBack, searchMode }) => {
             )}
           </div>
 
-          {/* Resultados en Grid de 2 columnas - IDÉNTICO a PerfumesByBrandScreen */}
+          {/* Resultados en Grid de 2 columnas - CON IMÁGENES */}
           {searchResults.length > 0 && (
             <div className="card" style={{ 
               maxWidth: '1100px', 
@@ -429,7 +441,7 @@ const SearchScreen = ({ onBack, searchMode }) => {
                       minHeight: '280px'
                     }}
                   >
-                    {/* Nombre del perfume - IDÉNTICO */}
+                    {/* Nombre del perfume */}
                     <h4 style={{ 
                       margin: '0 0 1rem 0', 
                       color: '#F3E5AB', 
@@ -440,7 +452,33 @@ const SearchScreen = ({ onBack, searchMode }) => {
                       {perfume.perfume || 'Nombre no disponible'}
                     </h4>
                     
-                    {/* Información básica en grid - IDÉNTICO */}
+                    {/* Imagen del perfume - AÑADIDO */}
+                    {getPerfumeImage(perfume.url) && (
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        marginBottom: '0.8rem' 
+                      }}>
+                        <img
+                          src={getPerfumeImage(perfume.url)}
+                          alt={perfume.perfume || 'Perfume'}
+                          loading="lazy"
+                          style={{
+                            width: '90px',
+                            height: '120px',
+                            objectFit: 'contain',
+                            borderRadius: '0.4rem',
+                            background: 'rgba(243, 229, 171, 0.15)',
+                            padding: '0.3rem'
+                          }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Información básica en grid */}
                     <div style={{ 
                       display: 'grid', 
                       gridTemplateColumns: '1fr 1fr', 
@@ -455,7 +493,7 @@ const SearchScreen = ({ onBack, searchMode }) => {
                       <div><strong>Perfumista:</strong> {perfume.perfumista || 'N/A'}</div>
                     </div>
 
-                    {/* Notas - IDÉNTICO */}
+                    {/* Notas */}
                     {(perfume.salida || perfume.corazon || perfume.base) && (
                       <div style={{ 
                         marginBottom: '1rem', 
@@ -471,7 +509,7 @@ const SearchScreen = ({ onBack, searchMode }) => {
                       </div>
                     )}
 
-                    {/* Acordes principales - IDÉNTICO */}
+                    {/* Acordes principales */}
                     {perfume.main_accords && perfume.main_accords.length > 0 && (
                       <div style={{ 
                         marginBottom: '1rem', 
@@ -489,7 +527,7 @@ const SearchScreen = ({ onBack, searchMode }) => {
                       </div>
                     )}
 
-                    {/* Botón de acción - IDÉNTICO */}
+                    {/* Botón de acción */}
                     <div style={{ 
                       display: 'flex', 
                       justifyContent: 'flex-end', 

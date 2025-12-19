@@ -25,11 +25,11 @@ const StartScreen = ({ onUserClick, onGuestClick }) => {
           <p className="subtitle">AROMAS</p>
 
           <button className="btn" onClick={onUserClick}>
-            <span className="icon">👤</span> USER
+            <span className="icon"></span> USER
           </button>
 
           <button className="btn" onClick={onGuestClick}>
-            <span className="icon">👥</span> GUEST
+            <span className="icon"></span> GUEST
           </button>
         </div>
       </div>
