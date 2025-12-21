@@ -1,22 +1,31 @@
 import React, { useState } from 'react';
-import { Star, ArrowLeft, Search, Home } from 'lucide-react';
+import { Star, ArrowLeft, Search } from 'lucide-react';
 import { useSearch } from '../hooks/useSearch';
 import { useAuth } from '../hooks/useAuth';
 
 const CelebrityScreen = ({ onBack, searchMode }) => {
   const [query, setQuery] = useState('');
-  const { searchResults, loading, error, searchByCelebrity } = useSearch();
+  const { searchResults, loading, loadingImages, error, searchByCelebrity } = useSearch();
   const auth = useAuth();
 
   const handleSearch = (e) => {
     e.preventDefault();
-    searchByCelebrity(query);
+    if (query.trim()) {
+      searchByCelebrity(query);
+    }
   };
 
   const handleClear = () => {
     setQuery('');
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && query.trim()) {
+      handleSearch(e);
+    }
+  };
+
+  // --- ESTILOS ---
   const containerStyle = {
     minHeight: '100vh',
     display: 'flex',
@@ -53,7 +62,6 @@ const CelebrityScreen = ({ onBack, searchMode }) => {
     flexDirection: 'column'
   };
 
-  // Obtener el nombre del usuario si está en modo user
   const getUserDisplayName = () => {
     if (searchMode === 'user' && auth.user) {
       return `${auth.user.name || 'Usuario'} ${auth.user.lastname || ''}`.trim();
@@ -83,11 +91,7 @@ const CelebrityScreen = ({ onBack, searchMode }) => {
             </span>
           </div>
           
-          <button className="exit-btn" onClick={onBack} style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
+          <button className="exit-btn" onClick={onBack}>
             <ArrowLeft size={16} /> Volver
           </button>
         </header>
@@ -96,12 +100,8 @@ const CelebrityScreen = ({ onBack, searchMode }) => {
         <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
           <div className="card" style={{ maxWidth: '900px', margin: '0 auto', width: '95%' }}>
             
-            {/* Título CELEBRITY MATCH */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              marginBottom: '1.5rem' 
-            }}>
+            {/* Título */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
               <div className="logo" style={{
                 fontSize: '1.8rem',
                 letterSpacing: '2px',
@@ -110,15 +110,9 @@ const CelebrityScreen = ({ onBack, searchMode }) => {
                 background: 'rgb(243,229,171)',
                 padding: '12px 25px',
                 borderRadius: '12px',
-                display: 'inline-block',
                 border: '2px solid #713600',
-                boxShadow: 
-                  '0 0 20px rgba(243,229,171), inset 0 0 15px rgba(255, 215, 0, 0.2)',
+                boxShadow: '0 0 20px rgba(243,229,171), inset 0 0 15px rgba(255, 215, 0, 0.2)',
                 color: '#713600',
-                animation: 'none',
-                WebkitFontSmoothing: 'antialiased',
-                MozOsxFontSmoothing: 'grayscale',
-                textRendering: 'optimizeLegibility',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px'
@@ -151,6 +145,7 @@ const CelebrityScreen = ({ onBack, searchMode }) => {
                   className="input"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   style={{ 
                     paddingLeft: '2.5rem',
                     width: '100%',
@@ -215,7 +210,7 @@ const CelebrityScreen = ({ onBack, searchMode }) => {
                 border: '1px solid #ff4444'
               }}>
                 <p style={{ color: '#ff4444', margin: 0, fontSize: '0.9rem' }}>
-                  ❌ No encontramos a ese famoso en nuestra base de datos.
+                  ❌ {error}
                 </p>
               </div>
             )}
@@ -275,19 +270,58 @@ const CelebrityScreen = ({ onBack, searchMode }) => {
                             justifyContent: 'center',
                             padding: '10px'
                           }}>
-                            <img 
-                              src={perfume.img || perfume.image} 
-                              alt={perfume.name} 
-                              style={{ 
-                                maxHeight: '100%', 
-                                maxWidth: '100%', 
-                                objectFit: 'contain' 
-                              }} 
-                              onError={(e) => {
-                                e.target.onerror = null; 
-                                e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23713600'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='12' fill='%23F3E5AB'%3ENo Image%3C/text%3E%3C/svg%3E"
-                              }}
-                            />
+                            {loadingImages ? (
+                              <div style={{ 
+                                display: 'flex', 
+                                flexDirection: 'column',
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                width: '100%',
+                                height: '100%',
+                                color: '#713600',
+                                fontSize: '0.8rem',
+                                textAlign: 'center'
+                              }}>
+                                <div style={{ 
+                                  width: '30px', 
+                                  height: '30px', 
+                                  border: '3px solid rgba(113, 54, 0, 0.3)',
+                                  borderTop: '3px solid #713600',
+                                  borderRadius: '50%',
+                                  animation: 'spin 1s linear infinite',
+                                  marginBottom: '0.5rem'
+                                }}></div>
+                                Cargando...
+                              </div>
+                            ) : perfume.img ? (
+                              <img 
+                                src={perfume.img} 
+                                alt={perfume.name} 
+                                style={{ 
+                                  maxHeight: '100%', 
+                                  maxWidth: '100%', 
+                                  objectFit: 'contain' 
+                                }} 
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23713600'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='12' fill='%23F3E5AB'%3ENo Image%3C/text%3E%3C/svg%3E";
+                                }}
+                              />
+                            ) : (
+                              <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                width: '100%',
+                                height: '100%',
+                                color: '#713600',
+                                fontSize: '0.8rem',
+                                textAlign: 'center',
+                                padding: '1rem'
+                              }}>
+                                Imagen no disponible
+                              </div>
+                            )}
                           </div>
                           <h4 style={{ 
                             color: '#F3E5AB', 
@@ -311,7 +345,7 @@ const CelebrityScreen = ({ onBack, searchMode }) => {
                   </div>
                 ))
               ) : (
-                !loading && !error && (
+                !loading && !loadingImages && !error && (
                   <div style={{ 
                     textAlign: 'center', 
                     padding: '2rem',
@@ -340,6 +374,14 @@ const CelebrityScreen = ({ onBack, searchMode }) => {
           </div>
         </div>
       </div>
+
+      {/* Estilos para la animación de spinner */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };

@@ -9,7 +9,7 @@ const celebritiesDB = [
       {
         "name": "Fenty Eau de Parfum",
         "brand": "Fenty",
-        "img": "https://fimgs.net/mdimg/perfume/375x500.68032.jpg"
+        
       },
       {
         "name": "Kilian Love, don't be shy",
@@ -24,7 +24,7 @@ const celebritiesDB = [
     "gender": "Masculino",
     "perfumes": [
       {
-        "name": "Creed Aventus",
+        "name": "Aventus",
         "brand": "Creed",
         "img": "https://fimgs.net/mdimg/perfume/375x500.27433.jpg"
       },
