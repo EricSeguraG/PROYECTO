@@ -9,7 +9,9 @@ function UserScreen({
   onClonesClick, 
   onCelebrityClick, 
   onPerfumesClick,
-  onTopRatedClick 
+  onTopRatedClick,
+  onWishlistClick,
+  onCollectionClick
 }) {
   const containerStyle = {
     minHeight: '100vh',
@@ -50,36 +52,32 @@ function UserScreen({
   const menuItems = [
     { 
       icon: <Heart />, 
-      label: "WISHLIST",
-      disabled: false
+      label: "MI WISHLIST",
+      action: onWishlistClick  // ← ¡CAMBIÉ disabled POR action!
     },
     { 
       icon: <BookOpen />, 
       label: "MI COLECCIÓN",
-      disabled: false
+      action: onCollectionClick
     },
     { 
       icon: <FlaskConical />, 
       label: "PERFUMES",
-      disabled: false,
       action: onPerfumesClick 
     },
     { 
       icon: <Copy />, 
       label: "CLONES/INSPIRACIONES",
-      disabled: false,
       action: onClonesClick
     },
     { 
       icon: <Star />, 
       label: "CELEBRITIES",
-      disabled: false,
       action: onCelebrityClick
     },
     { 
       icon: <Trophy />, 
       label: "LOS + VOTADOS",
-      disabled: false,
       action: onTopRatedClick 
     },
   ];
@@ -111,7 +109,7 @@ function UserScreen({
             <button 
               key={i} 
               className="menu-btn" 
-              onClick={item.action || (() => console.log("Función en desarrollo"))}
+              onClick={item.action}
             >
               {item.icon}
               {item.label}

@@ -13,11 +13,13 @@ import CelebrityScreen from "./components/CelebrityScreen";
 import BrandsScreen from "./components/BrandsScreen";
 import PerfumesByBrandScreen from "./components/PerfumesByBrandScreen";
 import TopRatedScreen from "./components/TopRatedScreen"; // <-- Nuevo componente
+import WishlistScreen from "./components/WishlistScreen";
+import CollectionScreen from './components/CollectionScreen';
 import "./App.css";
 
 function App() {
   // Estados de navegación
-  const [mode, setMode] = useState("start"); // start | login | user | guest | search | clones | celebrity | brands | perfumes-by-brand | top-rated
+const [mode, setMode] = useState("start"); // start | login | user | guest | search | clones | celebrity | brands | perfumes-by-brand | top-rated | wishlist
   const [searchMode, setSearchMode] = useState("user");
   const [selectedBrand, setSelectedBrand] = useState("");
   
@@ -55,6 +57,10 @@ function App() {
     setSearchMode(fromMode);
     setMode("brands");
   };
+    const handleWishlistClick = (fromMode) => {
+    setSearchMode(fromMode);
+    setMode("wishlist");
+  };
 
   // NUEVA FUNCIÓN para "Los más votados"
   const handleTopRatedClick = (fromMode) => {
@@ -65,6 +71,11 @@ function App() {
   const handleBrandSelect = (brandName) => {
     setSelectedBrand(brandName);
     setMode("perfumes-by-brand");
+  };
+
+  const handleCollectionClick = (fromMode) => {
+    setSearchMode(fromMode);
+    setMode("coleccion");
   };
 
   const handleBackFromPerfumes = () => {
@@ -110,6 +121,8 @@ function App() {
         onCelebrityClick={() => handleCelebrityClick("user")}
         onPerfumesClick={() => handleBrandsClick("user")}
         onTopRatedClick={() => handleTopRatedClick("user")} // <-- Nuevo prop
+        onWishlistClick={() => handleWishlistClick("user")}
+        onCollectionClick={() => handleCollectionClick("user")}
       />
     );
   }
@@ -170,6 +183,24 @@ function App() {
         onBack={handleBackFromPerfumes}
         brandName={selectedBrand}
         searchMode={searchMode}
+      />
+    );
+  }
+  if (mode === "wishlist") {
+    return (
+      <WishlistScreen 
+        onBack={() => setMode(searchMode)}
+        searchMode={searchMode}
+        user={auth.user}  
+      />
+    );
+  }
+    if (mode === "coleccion") {
+    return (
+      <CollectionScreen 
+        onBack={() => setMode(searchMode)}
+        searchMode={searchMode}
+        user={auth.user}  
       />
     );
   }

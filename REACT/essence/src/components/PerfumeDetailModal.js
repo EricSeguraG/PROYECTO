@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Star, Send, User, Calendar } from 'lucide-react';
+import { X, Star, Send, User, Calendar, Heart, Bookmark } from 'lucide-react';
 import { perfumeAPI } from '../services/api';
 
 const PerfumeDetailModal = ({ perfume, user, onClose }) => {
@@ -9,23 +9,124 @@ const PerfumeDetailModal = ({ perfume, user, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  
+  // Estados para wishlist y colección
+  const [inWishlist, setInWishlist] = useState(false);
+  const [inCollection, setInCollection] = useState(false);
+  const [loadingWishlist, setLoadingWishlist] = useState(false);
+  const [loadingCollection, setLoadingCollection] = useState(false);
 
   useEffect(() => {
     if (perfume?.perfume || perfume?.id) {
       loadComments();
+      checkUserLists();
     }
-  }, [perfume]);
+  }, [perfume, user]);
+
+  const checkUserLists = async () => {
+    if (!user || !perfume) return;
+    
+    try {
+      // Usamos encodeURIComponent para manejar espacios y caracteres especiales
+      const identifier = perfume.id || encodeURIComponent(perfume.perfume || perfume.nombre);
+      
+      // Check wishlist
+      const wishlistCheck = await perfumeAPI.checkInWishlist(user.id, identifier);
+      setInWishlist(wishlistCheck.exists || false);
+      
+      // Check collection
+      const collectionCheck = await perfumeAPI.checkInCollection(user.id, identifier);
+      setInCollection(collectionCheck.exists || false);
+    } catch (err) {
+      console.error("Error checking user lists:", err);
+    }
+  };
 
   const loadComments = async () => {
     setLoading(true);
     try {
-      const identifier = perfume.id || encodeURIComponent(perfume.perfume);
+      const identifier = perfume.id || encodeURIComponent(perfume.perfume || perfume.nombre);
       const data = await perfumeAPI.getComments(identifier);
       setComments(data || []);
     } catch (err) {
       console.error("Error cargando comentarios:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleWishlistToggle = async () => {
+    if (!user) {
+      setError("Inicia sesión para usar la wishlist");
+      return;
+    }
+    
+    setLoadingWishlist(true);
+    try {
+      const identifier = perfume.id || encodeURIComponent(perfume.perfume || perfume.nombre);
+      
+      if (inWishlist) {
+        await perfumeAPI.removeFromWishlist(user.id, identifier);
+        setInWishlist(false);
+      } else {
+        await perfumeAPI.addToWishlist({
+          usuario_id: user.id,
+          perfume_id: perfume.id || null,
+          perfume_name: perfume.perfume || perfume.nombre,
+          marca: perfume.marca,
+          genero: perfume.genero,
+          año: perfume.año,
+          main_accords: perfume.main_accords,
+          notas_salida: perfume.salida,
+          notas_corazon: perfume.corazon,
+          notas_base: perfume.base,
+          perfumista: perfume.perfumista
+        });
+        setInWishlist(true);
+      }
+    } catch (err) {
+      setError("Error al actualizar wishlist: " + err.message);
+      console.error(err);
+    } finally {
+      setLoadingWishlist(false);
+    }
+  };
+
+  const handleCollectionToggle = async () => {
+    if (!user) {
+      setError("Inicia sesión para gestionar tu colección");
+      return;
+    }
+    
+    setLoadingCollection(true);
+    try {
+      const identifier = perfume.id || encodeURIComponent(perfume.perfume || perfume.nombre);
+      
+      if (inCollection) {
+        await perfumeAPI.removeFromCollection(user.id, identifier);
+        setInCollection(false);
+      } else {
+        await perfumeAPI.addToCollection({
+          usuario_id: user.id,
+          perfume_id: perfume.id || null,
+          perfume_name: perfume.perfume || perfume.nombre,
+          marca: perfume.marca,
+          genero: perfume.genero,
+          año: perfume.año,
+          main_accords: perfume.main_accords,
+          notas_salida: perfume.salida,
+          notas_corazon: perfume.corazon,
+          notas_base: perfume.base,
+          perfumista: perfume.perfumista,
+          fecha_adquisicion: new Date().toISOString().split('T')[0]
+        });
+        setInCollection(true);
+      }
+    } catch (err) {
+      setError("Error al actualizar colección: " + err.message);
+      console.error(err);
+    } finally {
+      setLoadingCollection(false);
     }
   };
 
@@ -81,7 +182,7 @@ const PerfumeDetailModal = ({ perfume, user, onClose }) => {
     <div style={overlayStyle}>
       <div style={modalStyle}>
         
-        {/* HEADER ELEGANTE */}
+        {/* HEADER CON BOTONES DE WISHLIST Y COLECCIÓN */}
         <div style={{ 
           padding: '1.5rem 1.5rem 1rem 1.5rem', 
           background: 'linear-gradient(135deg, #713600 0%, #3d1c00 100%)',
@@ -122,15 +223,131 @@ const PerfumeDetailModal = ({ perfume, user, onClose }) => {
           
           <div style={{ 
             display: 'flex', 
-            gap: '1rem', 
-            color: 'rgba(243, 229, 171, 0.8)',
-            fontSize: '0.9rem'
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem'
           }}>
-            <span>🏷️ {perfume.marca}</span>
-            <span>👤 {perfume.genero}</span>
-            {perfume.año && <span>📅 {perfume.año}</span>}
+            <div style={{ 
+              display: 'flex', 
+              gap: '1rem', 
+              color: 'rgba(243, 229, 171, 0.8)',
+              fontSize: '0.9rem'
+            }}>
+              <span>🏷️ {perfume.marca}</span>
+              <span>👤 {perfume.genero}</span>
+              {perfume.año && <span>📅 {perfume.año}</span>}
+            </div>
+            
+            {/* BOTONES DE WISHLIST Y COLECCIÓN */}
+            {user && (
+              <div style={{ 
+                display: 'flex', 
+                gap: '0.5rem',
+                alignItems: 'center'
+              }}>
+                {/* BOTÓN WISHLIST */}
+                <button
+                  onClick={handleWishlistToggle}
+                  disabled={loadingWishlist}
+                  style={{
+                    background: inWishlist 
+                      ? 'linear-gradient(135deg, #ff3366 0%, #cc0044 100%)' 
+                      : 'rgba(243, 229, 171, 0.1)',
+                    border: `1px solid ${inWishlist ? '#ff3366' : '#ffee00ff'}`,
+                    borderRadius: '20px',
+                    padding: '0.5rem 1rem',
+                    color: inWishlist ? '#FFFFFF' : '#F3E5AB',
+                    cursor: loadingWishlist ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    transition: 'all 0.3s ease',
+                    opacity: loadingWishlist ? 0.7 : 1
+                  }}
+                  title={inWishlist ? "Quitar de wishlist" : "Añadir a wishlist"}
+                >
+                  {loadingWishlist ? (
+                    <div style={{ 
+                      width: '14px', 
+                      height: '14px', 
+                      border: '2px solid rgba(243, 229, 171, 0.3)',
+                      borderTop: '2px solid #F3E5AB',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                  ) : (
+                    <Heart size={16} fill={inWishlist ? "#FFFFFF" : "transparent"} />
+                  )}
+                  {inWishlist ? 'En Wishlist' : 'Wishlist'}
+                </button>
+                
+                {/* BOTÓN COLECCIÓN */}
+                <button
+                  onClick={handleCollectionToggle}
+                  disabled={loadingCollection}
+                  style={{
+                    background: inCollection 
+                      ? 'linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%)' 
+                      : 'rgba(243, 229, 171, 0.1)',
+                    border: `1px solid ${inCollection ? '#4CAF50' : '#ffee00ff'}`,
+                    borderRadius: '20px',
+                    padding: '0.5rem 1rem',
+                    color: inCollection ? '#FFFFFF' : '#F3E5AB',
+                    cursor: loadingCollection ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    transition: 'all 0.3s ease',
+                    opacity: loadingCollection ? 0.7 : 1
+                  }}
+                  title={inCollection ? "Quitar de mi colección" : "Añadir a mi colección"}
+                >
+                  {loadingCollection ? (
+                    <div style={{ 
+                      width: '14px', 
+                      height: '14px', 
+                      border: '2px solid rgba(243, 229, 171, 0.3)',
+                      borderTop: '2px solid #F3E5AB',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                  ) : (
+                    <Bookmark size={16} fill={inCollection ? "#FFFFFF" : "transparent"} />
+                  )}
+                  {inCollection ? 'En Colección' : 'Colección'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* NOTA PARA USUARIOS NO LOGUEADOS */}
+        {!user && (
+          <div style={{ 
+            padding: '0.8rem 1.5rem', 
+            background: 'rgba(113, 54, 0, 0.2)',
+            borderBottom: '1px solid rgba(243, 229, 171, 0.2)',
+            textAlign: 'center'
+          }}>
+            <p style={{ 
+              color: 'rgba(243, 229, 171, 0.7)', 
+              margin: 0, 
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem'
+            }}>
+              <User size={14} />
+              Inicia sesión para añadir perfumes a tu wishlist o colección
+            </p>
+          </div>
+        )}
 
         {/* CONTENIDO SCROLLEABLE */}
         <div style={{ 
@@ -148,17 +365,6 @@ const PerfumeDetailModal = ({ perfume, user, onClose }) => {
             border: '1px solid rgba(243, 229, 171, 0.2)',
             borderRadius: '10px'
           }}>
-            <h3 style={{ 
-              color: '#F3E5AB', 
-              margin: '0 0 1rem 0', 
-              fontSize: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              
-            </h3>
-            
             <div style={{ 
               display: 'grid', 
               gridTemplateColumns: '1fr 1fr', 
@@ -187,7 +393,7 @@ const PerfumeDetailModal = ({ perfume, user, onClose }) => {
                 </div>
               )}
               
-              {/* SECCIÓN DE ACORDES AÑADIDA */}
+              {/* SECCIÓN DE ACORDES */}
               {perfume.main_accords && (
                 <div style={{ 
                   gridColumn: 'span 2',

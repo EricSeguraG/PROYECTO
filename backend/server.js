@@ -192,6 +192,419 @@ app.post('/comentarios', async (req, res) => {
 });
 
 // ==========================================
+//  RUTAS DE WISHLIST
+// ==========================================
+
+app.post('/wishlist', async (req, res) => {
+  try {
+    const { 
+      usuario_id, 
+      perfume_id, 
+      perfume_name, 
+      marca, 
+      genero, 
+      año, 
+      main_accords, 
+      notas_salida, 
+      notas_corazon, 
+      notas_base, 
+      perfumista 
+    } = req.body;
+    
+    console.log('📥 POST /wishlist - Datos recibidos:', req.body);
+    
+    // Validar
+    if (!usuario_id || !perfume_name) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'usuario_id y perfume_name son requeridos' 
+      });
+    }
+    
+    // Insertar usando fecha_agregado
+    const [result] = await db.query(
+      `INSERT INTO wishlist 
+       (usuario_id, perfume_id, perfume_name, marca, genero, año, 
+        main_accords, notas_salida, notas_corazon, notas_base, perfumista, fecha_agregado) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        usuario_id, 
+        perfume_id || null, 
+        perfume_name, 
+        marca || null, 
+        genero || null, 
+        año || null, 
+        JSON.stringify(main_accords) || null,
+        notas_salida || null,
+        notas_corazon || null,
+        notas_base || null,
+        perfumista || null
+      ]
+    );
+    
+    console.log('✅ Wishlist creada - ID:', result.insertId);
+    
+    // Devolver el item completo
+    const [newItem] = await db.query(
+      'SELECT * FROM wishlist WHERE id = ?',
+      [result.insertId]
+    );
+    
+    // Asegurar que el frontend reciba created_at
+    const itemToReturn = newItem[0] ? {
+      ...newItem[0],
+      created_at: newItem[0].fecha_agregado || new Date().toISOString()
+    } : newItem[0];
+    
+    res.status(201).json(itemToReturn);
+    
+  } catch (error) {
+    console.error('❌ Error en POST /wishlist:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
+
+// 2. VERIFICAR SI ESTÁ EN WISHLIST
+// En checkInWishlist
+app.get('/wishlist/check/:usuarioId/:perfumeIdentifier', async (req, res) => {
+  try {
+    const { usuarioId, perfumeIdentifier } = req.params;
+    
+    console.log('🔍 GET /wishlist/check - usuario:', usuarioId, 'perfume:', perfumeIdentifier);
+    
+    const decodedIdentifier = decodeURIComponent(perfumeIdentifier);
+    
+    const [result] = await db.query(
+      `SELECT id, fecha_agregado FROM wishlist 
+       WHERE usuario_id = ? 
+       AND (perfume_id = ? OR perfume_name = ? OR perfume_name LIKE ?)`,
+      [
+        usuarioId, 
+        perfumeIdentifier, 
+        decodedIdentifier,
+        `%${decodedIdentifier}%`
+      ]
+    );
+    
+    const exists = result.length > 0;
+    
+    console.log('✅ Check wishlist - Existe:', exists);
+    
+    res.json({ 
+      exists: exists,
+      id: exists ? result[0].id : null,
+      fecha_agregado: exists ? result[0].fecha_agregado : null
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en GET /wishlist/check:', error);
+    res.status(500).json({ 
+      exists: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
+
+// 3. ELIMINAR DE WISHLIST
+app.delete('/wishlist/:usuarioId/:perfumeIdentifier', async (req, res) => {
+  try {
+    const { usuarioId, perfumeIdentifier } = req.params;
+    
+    console.log('🗑️ DELETE /wishlist - usuario:', usuarioId, 'perfume:', perfumeIdentifier);
+    
+    const decodedIdentifier = decodeURIComponent(perfumeIdentifier);
+    
+    const [result] = await db.query(
+      `DELETE FROM wishlist 
+       WHERE usuario_id = ? 
+       AND (perfume_id = ? OR perfume_name = ? OR perfume_name LIKE ?)`,
+      [
+        usuarioId, 
+        perfumeIdentifier, 
+        decodedIdentifier,
+        `%${decodedIdentifier}%`
+      ]
+    );
+    
+    if (result.affectedRows === 0) {
+      console.log('⚠️ No encontrado para eliminar');
+      return res.status(404).json({ 
+        success: false,
+        error: 'Perfume no encontrado en la wishlist' 
+      });
+    }
+    
+    console.log('✅ Wishlist eliminada - Filas afectadas:', result.affectedRows);
+    
+    res.json({ 
+      success: true, 
+      message: 'Perfume eliminado de la wishlist' 
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en DELETE /wishlist:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error interno del servidor' 
+    });
+  }
+});
+
+// En server.js, modifica la ruta de wishlist
+app.get('/wishlist/user/:usuarioId', async (req, res) => {
+  try {
+    const { usuarioId } = req.params;
+    console.log('📋 GET /wishlist/user - usuario:', usuarioId);
+    
+    // Usa fecha_agregado en lugar de created_at
+    const [wishlist] = await db.query(
+      'SELECT * FROM wishlist WHERE usuario_id = ? ORDER BY fecha_agregado DESC',
+      [usuarioId]
+    );
+    
+    console.log('✅ Wishlist obtenida - Elementos:', wishlist.length);
+    
+    // Parsear JSON si main_accords está almacenado como string
+    const parsedWishlist = wishlist.map(item => {
+      try {
+        return {
+          ...item,
+          main_accords: item.main_accords ? JSON.parse(item.main_accords) : [],
+          // Asegúrate de que created_at apunte a fecha_agregado para el frontend
+          created_at: item.fecha_agregado || item.created_at
+        };
+      } catch (e) {
+        return {
+          ...item,
+          main_accords: item.main_accords || [],
+          created_at: item.fecha_agregado || item.created_at
+        };
+      }
+    });
+    
+    console.log('📦 Wishlist procesada:', parsedWishlist);
+    res.json(parsedWishlist);
+    
+  } catch (error) {
+    console.error('❌ Error en GET /wishlist/user:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// ==========================================
+//  RUTAS DE COLECCIÓN (MUY SIMILAR A WISHLIST)
+// ==========================================
+
+// 1. AÑADIR A COLECCIÓN
+app.post('/collection', async (req, res) => {
+  try {
+    const { 
+      usuario_id, 
+      perfume_id, 
+      perfume_name, 
+      marca, 
+      genero, 
+      año, 
+      main_accords, 
+      notas_salida, 
+      notas_corazon, 
+      notas_base, 
+      perfumista,
+      fecha_adquisicion 
+    } = req.body;
+    
+    console.log('📥 POST /collection - Datos recibidos:', req.body);
+    
+    if (!usuario_id) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'usuario_id es requerido' 
+      });
+    }
+    
+    if (!perfume_id && !perfume_name) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'perfume_id o perfume_name es requerido' 
+      });
+    }
+    
+    // Verificar si ya existe en colección
+    const [existing] = await db.query(
+      `SELECT id FROM coleccion 
+       WHERE usuario_id = ? 
+       AND (perfume_id = ? OR perfume_name = ?)`,
+      [usuario_id, perfume_id || null, perfume_name]
+    );
+    
+    if (existing.length > 0) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Este perfume ya está en tu colección' 
+      });
+    }
+    
+    // Insertar en la base de datos
+    const [result] = await db.query(
+      `INSERT INTO coleccion 
+       (usuario_id, perfume_id, perfume_name, marca, genero, año, 
+        main_accords, notas_salida, notas_corazon, notas_base, perfumista,
+        fecha_adquisicion) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        usuario_id, 
+        perfume_id || null, 
+        perfume_name, 
+        marca || null, 
+        genero || null, 
+        año || null, 
+        JSON.stringify(main_accords) || null,
+        notas_salida || null,
+        notas_corazon || null,
+        notas_base || null,
+        perfumista || null,
+        fecha_adquisicion || new Date().toISOString().split('T')[0]
+      ]
+    );
+    
+    console.log('✅ Colección creada - ID:', result.insertId);
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'Perfume añadido a tu colección',
+      id: result.insertId 
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en POST /collection:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
+
+// 2. VERIFICAR SI ESTÁ EN COLECCIÓN
+app.get('/collection/check/:usuarioId/:perfumeIdentifier', async (req, res) => {
+  try {
+    const { usuarioId, perfumeIdentifier } = req.params;
+    
+    console.log('🔍 GET /collection/check - usuario:', usuarioId, 'perfume:', perfumeIdentifier);
+    
+    const decodedIdentifier = decodeURIComponent(perfumeIdentifier);
+    
+    const [result] = await db.query(
+      `SELECT id FROM coleccion 
+       WHERE usuario_id = ? 
+       AND (perfume_id = ? OR perfume_name = ? OR perfume_name LIKE ?)`,
+      [
+        usuarioId, 
+        perfumeIdentifier, 
+        decodedIdentifier,
+        `%${decodedIdentifier}%`
+      ]
+    );
+    
+    const exists = result.length > 0;
+    
+    console.log('✅ Check colección - Existe:', exists);
+    
+    res.json({ 
+      exists: exists,
+      id: exists ? result[0].id : null
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en GET /collection/check:', error);
+    res.status(500).json({ 
+      exists: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
+
+// 3. ELIMINAR DE COLECCIÓN
+app.delete('/collection/:usuarioId/:perfumeIdentifier', async (req, res) => {
+  try {
+    const { usuarioId, perfumeIdentifier } = req.params;
+    
+    console.log('🗑️ DELETE /collection - usuario:', usuarioId, 'perfume:', perfumeIdentifier);
+    
+    const decodedIdentifier = decodeURIComponent(perfumeIdentifier);
+    
+    const [result] = await db.query(
+      `DELETE FROM coleccion 
+       WHERE usuario_id = ? 
+       AND (perfume_id = ? OR perfume_name = ? OR perfume_name LIKE ?)`,
+      [
+        usuarioId, 
+        perfumeIdentifier, 
+        decodedIdentifier,
+        `%${decodedIdentifier}%`
+      ]
+    );
+    
+    if (result.affectedRows === 0) {
+      console.log('⚠️ No encontrado para eliminar');
+      return res.status(404).json({ 
+        success: false,
+        error: 'Perfume no encontrado en la colección' 
+      });
+    }
+    
+    console.log('✅ Colección eliminada - Filas afectadas:', result.affectedRows);
+    
+    res.json({ 
+      success: true, 
+      message: 'Perfume eliminado de la colección' 
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en DELETE /collection:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error interno del servidor' 
+    });
+  }
+});
+
+// 4. OBTENER COLECCIÓN DEL USUARIO
+app.get('/collection/user/:usuarioId', async (req, res) => {
+  try {
+    const { usuarioId } = req.params;
+    
+    console.log('📋 GET /collection/user - usuario:', usuarioId);
+    
+    const [collection] = await db.query(
+      'SELECT * FROM coleccion WHERE usuario_id = ? ORDER BY fecha_adquisicion DESC',
+      [usuarioId]
+    );
+    
+    // Parsear JSON si main_accords está almacenado como string
+    const parsedCollection = collection.map(item => ({
+      ...item,
+      main_accords: item.main_accords ? JSON.parse(item.main_accords) : []
+    }));
+    
+    console.log('✅ Colección obtenida - Elementos:', parsedCollection.length);
+    
+    res.json(parsedCollection);
+    
+  } catch (error) {
+    console.error('❌ Error en GET /collection/user:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor' 
+    });
+  }
+});
+
+// ==========================================
 //  RUTAS DE DATOS (PERFUMES DESDE MYSQL)
 // ==========================================
 
@@ -353,12 +766,101 @@ app.get('/perfumes/similares', async (req, res) => {
 });
 
 // ==========================================
-//  ARRANQUE DEL SERVIDOR
+//  CREAR TABLAS SI NO EXISTEN
 // ==========================================
-const PORT = 3001;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor backend completo corriendo en http://localhost:${PORT}`);
-  console.log(`📝 Rutas de comentarios activas:`);
-  console.log(`   POST /comentarios - Guardar comentarios`);
-  console.log(`   GET  /comentarios/:id - Obtener comentarios por perfume`);
+
+// Función para crear las tablas si no existen
+const createTablesIfNotExist = async () => {
+  try {
+    // Tabla wishlist
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS wishlist (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        usuario_id INT NOT NULL,
+        perfume_id VARCHAR(255),
+        perfume_name VARCHAR(255) NOT NULL,
+        marca VARCHAR(255),
+        genero VARCHAR(50),
+        año VARCHAR(20),
+        main_accords TEXT,
+        notas_salida TEXT,
+        notas_corazon TEXT,
+        notas_base TEXT,
+        perfumista VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE,
+        INDEX idx_usuario_perfume (usuario_id, perfume_name)
+      )
+    `);
+    console.log('✅ Tabla wishlist verificada/creada');
+    
+    // Tabla coleccion
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS coleccion (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        usuario_id INT NOT NULL,
+        perfume_id VARCHAR(255),
+        perfume_name VARCHAR(255) NOT NULL,
+        marca VARCHAR(255),
+        genero VARCHAR(50),
+        año VARCHAR(20),
+        main_accords TEXT,
+        notas_salida TEXT,
+        notas_corazon TEXT,
+        notas_base TEXT,
+        perfumista VARCHAR(255),
+        fecha_adquisicion DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE,
+        INDEX idx_usuario_perfume (usuario_id, perfume_name)
+      )
+    `);
+    console.log('✅ Tabla coleccion verificada/creada');
+    
+  } catch (error) {
+    console.error('❌ Error creando tablas:', error);
+  }
+};
+
+// ==========================================
+//  RUTA DE PRUEBA PARA VERIFICAR SERVIDOR
+// ==========================================
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    message: 'Servidor Node.js funcionando',
+    timestamp: new Date().toISOString(),
+    routes: {
+      auth: ['POST /register', 'POST /login'],
+      comments: ['GET /comentarios/:id', 'POST /comentarios'],
+      wishlist: ['POST /wishlist', 'GET /wishlist/check/:userId/:perfumeId', 'DELETE /wishlist/:userId/:perfumeId', 'GET /wishlist/user/:userId'],
+      collection: ['POST /collection', 'GET /collection/check/:userId/:perfumeId', 'DELETE /collection/:userId/:perfumeId', 'GET /collection/user/:userId'],
+      perfumes: ['GET /perfumes/marcas', 'GET /perfumes/marca/:nombre', 'GET /perfumes/search', 'GET /perfumes/similares']
+    }
+  });
+});
+
+// ==========================================
+//  INICIAR SERVIDOR
+// ==========================================
+
+// Crear tablas antes de iniciar
+createTablesIfNotExist().then(() => {
+  const PORT = 3001;
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor backend completo corriendo en http://localhost:${PORT}`);
+    console.log(`📝 Rutas activas:`);
+    console.log(`   POST /wishlist - Añadir a wishlist`);
+    console.log(`   GET  /wishlist/check/:userId/:perfumeId - Verificar wishlist`);
+    console.log(`   DELETE /wishlist/:userId/:perfumeId - Eliminar de wishlist`);
+    console.log(`   GET  /wishlist/user/:userId - Obtener wishlist del usuario`);
+    console.log(`   POST /collection - Añadir a colección`);
+    console.log(`   GET  /collection/check/:userId/:perfumeId - Verificar colección`);
+    console.log(`   DELETE /collection/:userId/:perfumeId - Eliminar de colección`);
+    console.log(`   GET  /collection/user/:userId - Obtener colección del usuario`);
+    console.log(`   GET  /health - Verificar estado del servidor`);
+  });
+}).catch(err => {
+  console.error('❌ Error al crear tablas:', err);
+  process.exit(1);
 });
