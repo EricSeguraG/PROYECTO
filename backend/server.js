@@ -131,6 +131,166 @@ app.get('/comentarios/:perfumeIdentifier', async (req, res) => {
   }
 });
 
+// En server.js, modifica SOLO la ruta /perfumes/top-rated:
+
+// 🏆 PERFUMES MÁS VOTADOS (CORREGIDA - SOLO 10)
+app.get('/perfumes/top-rated', async (req, res) => {
+  try {
+    const limit = 10; // SOLO 10 PERFUMES
+    
+    console.log('🏆 GET /perfumes/top-rated - SOLO 10 perfumes');
+    
+    // Query CORREGIDA - Solo 10 perfumes más votados
+    const query = `
+      SELECT 
+        p.id,
+        p.nombre as perfume,
+        p.nombre,
+        COALESCE(m.nombre, 'Marca desconocida') as marca,
+        COALESCE(g.nombre, 'Unisex') as genero,
+        COALESCE(p.año, 'N/A') as año,
+        COALESCE(p.notas_salida, '') as salida,
+        COALESCE(p.notas_corazon, '') as corazon,
+        COALESCE(p.notas_base, '') as base,
+        COALESCE(p.acordes_principales, '[]') as main_accords,
+        COALESCE(c.comment_count, 0) as total_comments,
+        COALESCE(c.comment_count, 0) as total_votes,
+        COALESCE(c.comment_count, 0) as vote_count,
+        COALESCE(c.average_rating, 0) as average_rating,
+        COALESCE(c.average_rating, 0) as avg_rating,
+        CONCAT('https://www.fragrantica.com/perfume/', 
+               LOWER(REPLACE(REPLACE(p.nombre, ' ', '-'), '--', '-')), 
+               '-', p.id, '.html') as url,
+        COALESCE(pe.nombre, '') as perfumista
+      FROM perfume p
+      LEFT JOIN marca m ON p.marca_id = m.id
+      LEFT JOIN genero g ON p.genero_id = g.id
+      LEFT JOIN perfumista pe ON p.perfumista_id = pe.id
+      LEFT JOIN (
+        SELECT 
+          perfume_id,
+          COUNT(*) as comment_count,
+          AVG(puntuacion) as average_rating
+        FROM comentario
+        GROUP BY perfume_id
+      ) c ON p.id = c.perfume_id
+      WHERE c.comment_count > 0
+      ORDER BY c.average_rating DESC, c.comment_count DESC
+      LIMIT ?
+    `;
+    
+    console.log('🔍 Ejecutando query para top 10 perfumes más votados...');
+    
+    const [perfumes] = await db.query(query, [limit]);
+    
+    console.log(`✅ ${perfumes.length} perfumes TOP 10 encontrados`);
+    
+    if (perfumes.length === 0) {
+      console.log('ℹ️ No hay perfumes con comentarios en la base de datos');
+      return res.json([]);
+    }
+    
+    // Parsear acordes principales y asegurar tipos de datos correctos
+    const parsedPerfumes = perfumes.map(perfume => {
+      let mainAccords = [];
+      try {
+        if (perfume.main_accords && perfume.main_accords !== '[]') {
+          if (typeof perfume.main_accords === 'string') {
+            try {
+              mainAccords = JSON.parse(perfume.main_accords);
+            } catch (e) {
+              // Si no es JSON válido, dividir por comas
+              mainAccords = perfume.main_accords.split(',').map(a => a.trim()).filter(a => a);
+            }
+          } else if (Array.isArray(perfume.main_accords)) {
+            mainAccords = perfume.main_accords;
+          }
+        }
+      } catch (e) {
+        console.log('⚠️ Error parseando main_accords:', e.message);
+      }
+      
+      return {
+        ...perfume,
+        id: perfume.id.toString(),
+        perfume: perfume.perfume,
+        nombre: perfume.nombre || perfume.perfume,
+        marca: perfume.marca || 'Marca desconocida',
+        genero: perfume.genero || 'Unisex',
+        año: perfume.año || 'N/A',
+        main_accords: mainAccords,
+        avg_rating: parseFloat(perfume.avg_rating || 0),
+        average_rating: parseFloat(perfume.average_rating || 0),
+        total_votes: parseInt(perfume.total_votes || 0),
+        total_comments: parseInt(perfume.total_comments || 0),
+        vote_count: parseInt(perfume.vote_count || 0),
+        salida: perfume.salida || '',
+        corazon: perfume.corazon || '',
+        base: perfume.base || '',
+        url: perfume.url || '',
+        perfumista: perfume.perfumista || ''
+      };
+    });
+    
+    // Ordenar por rating descendente
+    parsedPerfumes.sort((a, b) => b.average_rating - a.average_rating);
+    
+    console.log(`📦 Enviando ${parsedPerfumes.length} perfumes TOP 10 al frontend`);
+    console.log('Primeros 3 perfumes:', parsedPerfumes.slice(0, 3));
+    console.log('URLs generadas:', parsedPerfumes.map(p => p.url).slice(0, 3));
+    
+    res.json(parsedPerfumes);
+    
+  } catch (error) {
+    console.error('❌ Error en GET /perfumes/top-rated:', error);
+    res.status(500).json({ 
+      error: 'Error obteniendo perfumes más votados',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// 2. COMENTARIOS AGRUPADOS POR PERFUME (CORREGIDA)
+app.get('/comentarios/all/grouped', async (req, res) => {
+  try {
+    console.log('📊 GET /comentarios/all/grouped');
+    
+    // Query CORREGIDA para obtener comentarios agrupados
+    const query = `
+      SELECT 
+        p.nombre as perfume_name,
+        p.id as perfume_id,
+        COUNT(c.id) as comment_count,
+        COALESCE(AVG(c.puntuacion), 0) as average_rating
+      FROM perfume p
+      INNER JOIN comentario c ON p.id = c.perfume_id
+      GROUP BY p.id, p.nombre
+      HAVING COUNT(c.id) > 0
+      ORDER BY AVG(c.puntuacion) DESC, COUNT(c.id) DESC
+      LIMIT 100
+    `;
+    
+    const [results] = await db.query(query);
+    
+    console.log(`✅ ${results.length} grupos de comentarios obtenidos`);
+    
+    if (results.length === 0) {
+      console.log('ℹ️ No hay comentarios en la base de datos');
+    } else {
+      console.log('Primeros 5 resultados:', results.slice(0, 5));
+    }
+    
+    res.json(results);
+    
+  } catch (error) {
+    console.error('❌ Error en /comentarios/all/grouped:', error);
+    res.status(500).json({ 
+      error: 'Error obteniendo comentarios agrupados',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // --- GUARDAR COMENTARIO (ACTUALIZADA) ---
 app.post('/comentarios', async (req, res) => {
   const { usuario_id, perfume_id, perfume_name, texto, puntuacion } = req.body;
@@ -268,7 +428,6 @@ app.post('/wishlist', async (req, res) => {
 });
 
 // 2. VERIFICAR SI ESTÁ EN WISHLIST
-// En checkInWishlist
 app.get('/wishlist/check/:usuarioId/:perfumeIdentifier', async (req, res) => {
   try {
     const { usuarioId, perfumeIdentifier } = req.params;
@@ -353,7 +512,7 @@ app.delete('/wishlist/:usuarioId/:perfumeIdentifier', async (req, res) => {
   }
 });
 
-// En server.js, modifica la ruta de wishlist
+// 4. OBTENER WISHLIST DEL USUARIO
 app.get('/wishlist/user/:usuarioId', async (req, res) => {
   try {
     const { usuarioId } = req.params;
@@ -672,7 +831,7 @@ app.get('/perfumes/:id', async (req, res) => {
 
 // --- 4. BÚSQUEDA AVANZADA (ROBUSTO) ---
 app.get('/perfumes/search', async (req, res) => {
-  const { perfume, marca, genero, nota, acorde, perfumista } = req.query; 
+  const { perfume, marca, genero, nota, acorde, perfumista, limit } = req.query; 
   
   try {
     let sql = `
@@ -721,7 +880,7 @@ app.get('/perfumes/search', async (req, res) => {
       params.push(`%${vars[0]}%`, `%${vars[1]}%`);
     }
     
-    sql += " LIMIT 50";
+    sql += ` LIMIT ${parseInt(limit) || 50}`;
 
     const [resultados] = await db.query(sql, params);
     res.json({ resultados });
@@ -833,6 +992,7 @@ app.get('/health', (req, res) => {
     routes: {
       auth: ['POST /register', 'POST /login'],
       comments: ['GET /comentarios/:id', 'POST /comentarios'],
+      top_rated: ['GET /perfumes/top-rated', 'GET /comentarios/all/grouped'],
       wishlist: ['POST /wishlist', 'GET /wishlist/check/:userId/:perfumeId', 'DELETE /wishlist/:userId/:perfumeId', 'GET /wishlist/user/:userId'],
       collection: ['POST /collection', 'GET /collection/check/:userId/:perfumeId', 'DELETE /collection/:userId/:perfumeId', 'GET /collection/user/:userId'],
       perfumes: ['GET /perfumes/marcas', 'GET /perfumes/marca/:nombre', 'GET /perfumes/search', 'GET /perfumes/similares']
@@ -849,7 +1009,10 @@ createTablesIfNotExist().then(() => {
   const PORT = 3001;
   app.listen(PORT, () => {
     console.log(`🚀 Servidor backend completo corriendo en http://localhost:${PORT}`);
-    console.log(`📝 Rutas activas:`);
+    console.log(`🏆 Rutas NUEVAS activas:`);
+    console.log(`   GET  /perfumes/top-rated - Perfumes más votados`);
+    console.log(`   GET  /comentarios/all/grouped - Comentarios agrupados por perfume`);
+    console.log(`📝 Todas las rutas activas:`);
     console.log(`   POST /wishlist - Añadir a wishlist`);
     console.log(`   GET  /wishlist/check/:userId/:perfumeId - Verificar wishlist`);
     console.log(`   DELETE /wishlist/:userId/:perfumeId - Eliminar de wishlist`);

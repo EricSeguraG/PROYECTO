@@ -576,6 +576,29 @@ def get_perfume(perfume_id):
     perfume_limpio = preparar_respuesta(perfume)
     return jsonify(perfume_limpio)
 
+@app.route('/perfumes/top-rated', methods=['POST'])
+def get_top_rated():
+    try:
+        data = request.json or {}
+        limit = data.get('limit', 100)
+        min_votes = data.get('min_votes', 1)
+        sort_by = data.get('sort_by', 'average_rating')
+        order = data.get('order', 'desc')
+        
+     
+        return jsonify([])  # Retornar array de perfumes
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/perfumes/all', methods=['GET'])
+def get_all_perfumes():
+    try:
+        # Retornar todos los perfumes
+        return jsonify([])  # Tu lista de perfumes
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/perfumes/search', methods=['GET'])
 def search_perfumes():

@@ -1639,7 +1639,7 @@ const celebritiesDB = [
     "gender": "Femenino",
     "perfumes": [
       {
-        "name": "Omnia",
+        "name": "Omnia amethyste",
         "brand": "Bvlgari",
       "img": "videos/51k20QOF3+L._AC_SX679_.jpg"
 
